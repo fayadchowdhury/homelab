@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+  namespace: minio
+spec:
+  serviceName: minio-headless
+  replicas: 4
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: db-role
+                    operator: NotIn
+                    values:
+                      - postgres
+      containers:
+      - name: minio
+        image: quay.io/minio/minio:latest
+        args:
+        - server
+        - http://minio-{0...3}.minio-headless.minio.svc.cluster.local/data
+        - --console-address
+        - ":9001"
+        env:
+        - name: MINIO_ROOT_USER
+          value: "admin"
+        - name: MINIO_ROOT_PASSWORD
+          value: "dipto123"
+        ports:
+        - containerPort: 9000
+        - containerPort: 9001
+        volumeMounts:
+        - name: data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: local-path
+      resources:
+        requests:
+          storage: 10Gi
