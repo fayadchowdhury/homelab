@@ -1,0 +1,17 @@
+{{- if .Values.sampleApp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.sampleApp.app }}-loadbalancer
+  namespace: {{ .Values.sampleApp.namespace }}
+spec:
+  selector:
+    app: {{ .Values.sampleApp.app }}
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  # type: LoadBalancer
+  type: ClusterIP # With Nginx Ingress Controller, we use ClusterIP
+{{- end }}

@@ -1,0 +1,21 @@
+{{- if and .Values.sampleApp.enabled .Values.sampleApp.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.sampleApp.app }}-ingress
+  namespace: {{ .Values.sampleApp.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.sampleApp.app }}-ingress
+spec:
+  ingressClassName: {{ .Values.sampleApp.ingress.className }}
+  rules: # Done with wildcarding, best to set up a hostname for production
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: {{ .Values.sampleApp.app }}-loadbalancer
+            port:
+              number: 80
+{{- end }}

@@ -1,0 +1,58 @@
+{{- if .Values.minio.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.minio.app }}
+  namespace: {{ .Values.minio.namespace }}
+spec:
+  serviceName: {{ .Values.minio.app }}-headless
+  replicas: {{ .Values.minio.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.minio.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.minio.app }}
+    spec:
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #         - matchExpressions:
+      #             - key: db-role
+      #               operator: NotIn
+      #               values:
+      #                 - postgres
+      containers:
+      - name: {{ .Values.minio.app }}
+        image: quay.io/minio/minio:latest
+        args:
+        - server
+        # - http://minio-{0...3}.minio-headless.minio.svc.cluster.local/data
+        {{- range $i, $e := until (.Values.minio.replicas | int ) }}
+        - http://minio-{{ $i }}.{{ $.Values.minio.app }}-headless.{{ $.Values.minio.namespace }}.svc.cluster.local/data
+        {{- end }}
+        - --console-address
+        - ":9001"
+        env:
+        - name: MINIO_ROOT_USER
+          value: {{ .Values.minio.accessKey | quote }}
+        - name: MINIO_ROOT_PASSWORD
+          value: {{ .Values.minio.secretKey | quote }}
+        ports:
+        - containerPort: 9000
+        - containerPort: 9001
+        volumeMounts:
+        - name: data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: {{ .Values.minio.storage.storageClass | quote }}
+      resources:
+        requests:
+          storage: {{ .Values.minio.storage.size }}
+{{- end }}

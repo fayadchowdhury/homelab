@@ -1,0 +1,33 @@
+{{- if .Values.cloudnativepg.enabled }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Values.cloudnativepg.clusterName }}
+  namespace: {{ .Values.cloudnativepg.namespace }}
+spec:
+  instances: {{ .Values.cloudnativepg.instances }}
+  imageName: ghcr.io/cloudnative-pg/postgresql:15.4
+  storage:
+    size: {{ .Values.cloudnativepg.storage.size }}
+    storageClass: {{ .Values.cloudnativepg.storage.storageClass }}
+
+  superuserSecret:
+    name: {{ .Values.cloudnativepg.superuser.secretName }}
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.cloudnativepg.appuser.appdb }}
+      owner: {{ .Values.cloudnativepg.appuser.name }}
+      secret:
+        name: {{ .Values.cloudnativepg.appuser.secretName }}
+
+  # affinity:
+  #   nodeAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #       nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: db-role
+  #           operator: In
+  #           values:
+  #           - postgres
+{{- end }}

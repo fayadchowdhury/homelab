@@ -1,0 +1,18 @@
+{{- if .Values.minio.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.minio.app }}-headless
+  namespace: {{ .Values.minio.namespace }}
+  labels:
+    app: {{ .Values.minio.app }}
+spec:
+  clusterIP: None
+  selector:
+    app: {{ .Values.minio.app }}
+  ports:
+    - port: 9000
+      name: api
+    - port: 9001
+      name: console
+{{- end }}

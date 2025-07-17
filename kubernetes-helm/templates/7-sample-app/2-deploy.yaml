@@ -1,0 +1,26 @@
+{{- if .Values.sampleApp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.sampleApp.app }}
+  namespace: {{ .Values.sampleApp.namespace }}
+spec:
+  replicas: {{ .Values.sampleApp.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.sampleApp.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.sampleApp.app }}
+    spec:
+      containers:
+      - name: {{ .Values.sampleApp.app }}
+        image: {{ .Values.sampleApp.image.repository }}:{{ .Values.sampleApp.image.tag }}
+        command:
+        - /bin/sh
+        - -c
+        - "echo $(hostname) > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"
+        ports:
+        - containerPort: 80
+{{- end }}
