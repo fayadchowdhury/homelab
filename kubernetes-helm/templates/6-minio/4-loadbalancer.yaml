@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.minio.app }}-loadbalancer
-  namespace: {{ .Values.minio.namespace }}
+  name: {{ .Values.minio.app | default "minio" }}-loadbalancer
+  namespace: {{ .Values.minio.namespace | default "minio" }}
   labels:
-    app: {{ .Values.minio.app }}
+    app: {{ .Values.minio.app | default "minio" }}
 spec:
   selector:
-    app: {{ .Values.minio.app }}
+    app: {{ .Values.minio.app | default "minio" }}
   ports:
     - name: api
       port: 9000

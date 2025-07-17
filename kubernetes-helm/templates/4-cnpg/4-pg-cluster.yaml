@@ -2,24 +2,24 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: {{ .Values.cloudnativepg.clusterName }}
-  namespace: {{ .Values.cloudnativepg.namespace }}
+  name: {{ .Values.cloudnativepg.clusterName | default "postgres-cluster" }}
+  namespace: {{ .Values.cloudnativepg.namespace | default "cnpg-pods" }}
 spec:
-  instances: {{ .Values.cloudnativepg.instances }}
-  imageName: ghcr.io/cloudnative-pg/postgresql:15.4
+  instances: {{ .Values.cloudnativepg.instances | default 3 }}
+  imageName: {{ .Values.cloudnativepg.image.repository | default "ghcr.io/cloudnative-pg/postgresql" }}:{{ .Values.cloudnativepg.image.tag | default "15.4" }}
   storage:
-    size: {{ .Values.cloudnativepg.storage.size }}
-    storageClass: {{ .Values.cloudnativepg.storage.storageClass }}
+    size: {{ .Values.cloudnativepg.storage.size | default "10Gi" }}
+    storageClass: {{ .Values.cloudnativepg.storage.storageClass | default "standard" }}
 
   superuserSecret:
-    name: {{ .Values.cloudnativepg.superuser.secretName }}
+    name: {{ .Values.cloudnativepg.superuser.secretName | default "pg-superuser-secret" }}
 
   bootstrap:
     initdb:
-      database: {{ .Values.cloudnativepg.appuser.appdb }}
-      owner: {{ .Values.cloudnativepg.appuser.name }}
+      database: {{ .Values.cloudnativepg.appuser.appdb | default "appdb" }}
+      owner: {{ .Values.cloudnativepg.appuser.name | default "appuser" }}
       secret:
-        name: {{ .Values.cloudnativepg.appuser.secretName }}
+        name: {{ .Values.cloudnativepg.appuser.secretName | default "pg-app-secret" }}
 
   # affinity:
   #   nodeAffinity:

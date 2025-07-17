@@ -2,18 +2,18 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.minio.app }}
-  namespace: {{ .Values.minio.namespace }}
+  name: {{ .Values.minio.app | default "minio" }}
+  namespace: {{ .Values.minio.namespace | default "minio" }}
 spec:
-  serviceName: {{ .Values.minio.app }}-headless
-  replicas: {{ .Values.minio.replicas }}
+  serviceName: {{ .Values.minio.app | default "minio" }}-headless
+  replicas: {{ .Values.minio.replicas | default 4 }}
   selector:
     matchLabels:
-      app: {{ .Values.minio.app }}
+      app: {{ .Values.minio.app | default "minio" }}
   template:
     metadata:
       labels:
-        app: {{ .Values.minio.app }}
+        app: {{ .Values.minio.app | default "minio" }}
     spec:
       # affinity:
       #   nodeAffinity:
@@ -26,10 +26,9 @@ spec:
       #                 - postgres
       containers:
       - name: {{ .Values.minio.app }}
-        image: quay.io/minio/minio:latest
+        image: {{ .Values.minio.image.repository | default "quay.io/minio/minio" }}:{{ .Values.minio.image.tag | default "latest" }}
         args:
         - server
-        # - http://minio-{0...3}.minio-headless.minio.svc.cluster.local/data
         {{- range $i, $e := until (.Values.minio.replicas | int ) }}
         - http://minio-{{ $i }}.{{ $.Values.minio.app }}-headless.{{ $.Values.minio.namespace }}.svc.cluster.local/data
         {{- end }}
@@ -51,8 +50,8 @@ spec:
       name: data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: {{ .Values.minio.storage.storageClass | quote }}
+      storageClassName: {{ .Values.minio.storage.storageClass | default "standard" | quote }}
       resources:
         requests:
-          storage: {{ .Values.minio.storage.size }}
+          storage: {{ .Values.minio.storage.size | default "10Gi" | quote }}
 {{- end }}

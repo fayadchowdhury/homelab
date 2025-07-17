@@ -2,29 +2,29 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.minio.app }}-ingress
-  namespace: {{ .Values.minio.namespace }}
+  name: {{ .Values.minio.app | default "minio" }}-ingress
+  namespace: {{ .Values.minio.namespace | default "minio" }}
 spec:
-  ingressClassName: {{ .Values.minio.ingress.className }}
+  ingressClassName: {{ .Values.minio.ingress.className | default "nginx" }}
   rules:
-    - host: {{ .Values.minio.ingress.apiHost }}
+    - host: {{ .Values.minio.ingress.apiHost | default "minio.local" }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.minio.app }}-loadbalancer
+                name: {{ .Values.minio.app | default "minio" }}-loadbalancer
                 port:
                   number: 9000
-    - host: {{ .Values.minio.ingress.consoleHost }}
+    - host: {{ .Values.minio.ingress.consoleHost | default "minio-console.local" }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.minio.app }}-loadbalancer
+                name: {{ .Values.minio.app | default "minio" }}-loadbalancer
                 port:
                   number: 9001
 {{- end }}

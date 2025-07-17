@@ -2,12 +2,12 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.sampleApp.app }}-ingress
-  namespace: {{ .Values.sampleApp.namespace }}
+  name: {{ .Values.sampleApp.app | default "sample-app" }}-ingress
+  namespace: {{ .Values.sampleApp.namespace | default "sample-app-namespace" }}
   labels:
-    app.kubernetes.io/name: {{ .Values.sampleApp.app }}-ingress
+    app.kubernetes.io/name: {{ .Values.sampleApp.app | default "sample-app" }}-ingress
 spec:
-  ingressClassName: {{ .Values.sampleApp.ingress.className }}
+  ingressClassName: {{ .Values.sampleApp.ingress.className | default "nginx" }}
   rules: # Done with wildcarding, best to set up a hostname for production
   - http:
       paths:
@@ -15,7 +15,7 @@ spec:
         path: "/"
         backend:
           service:
-            name: {{ .Values.sampleApp.app }}-loadbalancer
+            name: {{ .Values.sampleApp.app | default "sample-app" }}-loadbalancer
             port:
               number: 80
 {{- end }}

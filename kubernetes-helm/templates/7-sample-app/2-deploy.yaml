@@ -2,21 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.sampleApp.app }}
-  namespace: {{ .Values.sampleApp.namespace }}
+  name: {{ .Values.sampleApp.app | default "sample-app" }}
+  namespace: {{ .Values.sampleApp.namespace | default "sample-app-namespace" }}
 spec:
-  replicas: {{ .Values.sampleApp.replicas }}
+  replicas: {{ .Values.sampleApp.replicas | default 3 }}
   selector:
     matchLabels:
-      app: {{ .Values.sampleApp.app }}
+      app: {{ .Values.sampleApp.app | default "sample-app" }}
   template:
     metadata:
       labels:
-        app: {{ .Values.sampleApp.app }}
+        app: {{ .Values.sampleApp.app | default "sample-app" }}
     spec:
       containers:
-      - name: {{ .Values.sampleApp.app }}
-        image: {{ .Values.sampleApp.image.repository }}:{{ .Values.sampleApp.image.tag }}
+      - name: {{ .Values.sampleApp.app | default "sample-app" }}
+        image: {{ .Values.sampleApp.image.repository | default "nginx" }}:{{ .Values.sampleApp.image.tag | default "latest" }}
         command:
         - /bin/sh
         - -c

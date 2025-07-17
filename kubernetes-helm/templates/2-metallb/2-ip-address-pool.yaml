@@ -1,9 +1,9 @@
-{{- if .Values.metallb.enabled }}
+{{- if and .Values.metallb.enabled .Values.metallb.ipAddressPool.enabled }}
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
-  name: {{ .Values.metallb.ipAddressPool.name }}
-  namespace: {{ .Values.metallb.namespace }}
+  name: {{ .Values.metallb.ipAddressPool.name | default "metallb-pool" }}
+  namespace: {{ .Values.metallb.namespace | default "metallb-system" }}
 spec:
   addresses:
 {{- range .Values.metallb.ipAddressPool.addresses }}

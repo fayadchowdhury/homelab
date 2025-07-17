@@ -134,9 +134,12 @@ metallb:
   l2advert:
     name: advert # Name for the MetalLB L2 advertisement
   ipAddressPool:
+    enabled: true # Set to true to enable the IP address pool
     name: metallb-pool # Name for the MetalLB IP address pool
     addresses:
-      - 10.10.10.100-10.10.10.150
+      - 10.10.10.100-10.10.10.120 # Range of IP addresses for MetalLB to use
+      - 10.10.10.121/32 # Single IP address for MetalLB to use, use subnetting with mask bits as required to increase pool size
+      - 10.10.10.122-10.10.10.150
 
 # Nginx Ingress Controller configuration
 ingress_nginx:
@@ -157,6 +160,9 @@ cloudnativepg:
     password: appuserpassword # Password for the application user
     appdb: appdb # Default database for the application user
   instances: 3 # Number of PostgreSQL instances in the cluster
+  image:
+    repository: ghcr.io/cloudnative-pg/postgresql # Image for the PostgreSQL instances
+    tag: 15.4 # Tag for latest CloudNativePG image
   clusterName: postgres-cluster # Name of the PostgreSQL cluster
   storage:
     size: 10Gi # Size of the storage for each PostgreSQL instance, replace with as much storage as you need
@@ -170,6 +176,9 @@ minio:
   accessKey: admin # Access key for MinIO
   secretKey: password # Secret key for MinIO
   replicas: 4 # Number of MinIO replicas
+  image:
+    repository: quay.io/minio/minio # Image repository for MinIO
+    tag: latest # Image tag for MinIO
   storage:
     size: 10Gi # Size of the storage for MinIO, replace with as much storage as you need
     storageClass: local-path # Storage class to use for MinIO, replace with whatever StorageClass is appropriate for your installation
