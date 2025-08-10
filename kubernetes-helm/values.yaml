@@ -167,6 +167,8 @@ cloudnativepg:
   storage:
     size: 10Gi # Size of the storage for each PostgreSQL instance, replace with as much storage as you need
     storageClass: local-path # Storage class to use for the PostgreSQL instances, replace with whatever StorageClass is appropriate for your installation
+  vector:
+    enabled: true # Set to true to enable pg_vector  
 
 # MinIO configuration
 minio:
