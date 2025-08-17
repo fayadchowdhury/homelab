@@ -1,2 +1,13 @@
 *.pub
 .DS_Store
+# Terraform generated files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.plan
+*-proxmox.log
+
+# Sensitive tfvars files (if applicable)
+terraform.tfvars
+# For example, if you have a file named 'secrets.tfvars'
+# secrets.tfvars
