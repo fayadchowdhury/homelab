@@ -52,7 +52,7 @@ resource "proxmox_vm_qemu" "vms" {
       # IDE (CD-ROM) for cloud-init disk
       ide1 {
         cloudinit {
-          storage   = "ceph-storage"
+          storage   = "vm-ct-drives" # Location of cloud-init disk
         }
       }
     }
