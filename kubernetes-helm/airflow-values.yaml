@@ -1,0 +1,130 @@
+executor: KubernetesExecutor
+
+postgresql:
+  enabled: false
+
+data:
+  metadataConnection:
+    user: airflow
+    pass: airflow
+    protocol: postgresql
+    host: postgres-cluster-rw.cnpg-pods.svc.cluster.local
+    port: 5432
+    db: airflow
+
+dags:
+  persistence:
+    enabled: false   # disable PVC
+
+  gitSync:
+    enabled: true
+    repo: "https://github.com/fayadchowdhury/airflow-dags.git"
+    branch: "master"
+    rev: HEAD
+    depth: 1
+    subPath: ""
+    wait: 60
+
+triggerer:
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: local-path
+
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    failureThreshold: 10
+    periodSeconds: 30
+    command: ~
+
+scheduler:
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    failureThreshold: 10
+    periodSeconds: 30
+  startupProbe:
+    initialDelaySeconds: 0
+    timeoutSeconds: 30
+    failureThreshold: 20
+    periodSeconds: 30
+
+apiServer:
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 10
+    periodSeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 10
+    periodSeconds: 30
+  startupProbe:
+    initialDelaySeconds: 0
+    timeoutSeconds: 20
+    failureThreshold: 20
+    periodSeconds: 30
+
+webserver:
+  defaultUser:
+    enabled: true
+    role: Admin
+    username: admin
+    email: admin@example.com
+    firstName: admin
+    lastName: user
+    password: admin
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 10
+    periodSeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 10
+    periodSeconds: 30
+  startupProbe:
+    initialDelaySeconds: 0
+    timeoutSeconds: 20
+    failureThreshold: 20
+    periodSeconds: 30
+
+dagProcessor:
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    failureThreshold: 10
+    periodSeconds: 30
+
+webserverSecretKey: a0f309d2f62c881b6d5579d7596fee97
+
+ingress:
+  apiServer:
+    enabled: true
+    path: "/"
+    pathType: "ImplementationSpecific"
+    hosts:
+      - name: "airflow.home.com"
+    ingressClassName: "nginx"
+
+env:
+  - name: AIRFLOW__LOGGING__REMOTE_LOGGING
+    value: "True"
+  - name: AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER
+    value: "s3://airflow-logs"
+  - name: AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID
+    value: "minio"
+  - name: AIRFLOW_CONN_MINIO
+    value: |
+      {
+        "conn_type": "aws",
+        "login": "admin",
+        "password": "password",
+        "extra": {
+          "region_name": "us-east-1",
+          "endpoint_url": "http://api.minio.home.com"
+        }
+      }
