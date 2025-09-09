@@ -1,5 +1,3 @@
-# Homelab
-
 ![State of homelab](./assets/featured-image.png)
 
 This repository contains the deployments in my homelab. This document will describe the details of my compute cluster and the structure of this repository in terms of the folders, and the individual folders will have more details about each deployment.
