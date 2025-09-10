@@ -2,6 +2,12 @@
 
 This repository contains the deployments in my homelab. This document will describe the details of my compute cluster and the structure of this repository in terms of the folders, and the individual folders will have more details about each deployment.
 
+### TL;DR
+- 6 Kubernetes nodes with 1 control plane node and 5 worker nodes
+- Pi-Hole as an ad-blocker and local DNS
+- Helm charts for easy deployment of applications
+- Easy version control with Git and Github
+
 ## Cluster hardware
 
 My homelab is composed of 3 mini computers, 1 Raspberry Pi 3B+ and 1 unmanaged 5 port TP-Link switch.
