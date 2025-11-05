@@ -84,4 +84,6 @@ resource "proxmox_vm_qemu" "vms" {
   # SSH keys to log in to VM
   sshkeys           = file(var.SSH_KEYS_FILE)
 
+  # Add tags to specify kind of node
+  tags              = each.value.tags
 }

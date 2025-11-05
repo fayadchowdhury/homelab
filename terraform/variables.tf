@@ -47,6 +47,7 @@ variable "VM_DEFINITIONS" {
         ipv4 = string
         gw = string
         cloudinit_disk_storage = string
+        tags = string
     }))
     description = "The list of VM definitions to base deployment off of"
 }

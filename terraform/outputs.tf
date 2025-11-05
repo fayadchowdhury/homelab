@@ -4,6 +4,7 @@ output "vm_metadata" {
         k => {
             ip   = regex("ip=([^,]+)", vm.ipconfig0)[0]
             name = vm.name
+            tags = vm.tags
         }
     }
 }
