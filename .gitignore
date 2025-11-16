@@ -11,3 +11,6 @@
 terraform.tfvars
 # For example, if you have a file named 'secrets.tfvars'
 # secrets.tfvars
+
+# Ansible inventory
+inventory.ini
