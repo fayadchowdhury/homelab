@@ -1,0 +1,8 @@
+---
+- name: Update package repositories
+  apt:
+    update_cache: yes
+
+- name: Upgrade packages to latest version
+  apt:
+    upgrade: dist
