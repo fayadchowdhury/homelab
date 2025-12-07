@@ -6,4 +6,3 @@ resources:
 - pg-superuser-secret.yaml
 - pg-app-user-secret.yaml
 - pg-cluster.yaml
-- ingress.yaml

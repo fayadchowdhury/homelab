@@ -25,7 +25,7 @@ spec:
                 - name: postgresql
                   port: 5432
                   targetPort: 5432
-              type: ClusterIP
+              type: LoadBalancer
 
   bootstrap:
     initdb:
