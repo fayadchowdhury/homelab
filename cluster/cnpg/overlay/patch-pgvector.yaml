@@ -1,0 +1,12 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: postgres-cluster
+  namespace: cnpg-pods
+spec:
+  name: appdb
+  owner: appuser
+  cluster:
+    name: postgres-cluster
+  extensions:
+    - name: vector
