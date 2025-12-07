@@ -6,3 +6,4 @@ resources:
 - ingress-nginx
 - longhorn
 - minio
+- cnpg
