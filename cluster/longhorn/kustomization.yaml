@@ -5,4 +5,4 @@ resources:
   - helmrepo.yaml
   - helmrelease.yaml
   - single-replica-storage-class.yaml
-  - frontend-loadbalancer.yaml
+  - ingress.yaml
