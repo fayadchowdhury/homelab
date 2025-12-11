@@ -4,3 +4,4 @@ resources:
   - namespace.yaml
   - headless-discovery-service.yaml
   - single-redis.yaml
+  - loadbalancer.yaml
