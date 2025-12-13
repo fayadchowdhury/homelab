@@ -2,5 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
-patches:
-  - path: patch-ip-address-pool.yaml
+  - ingress-ip-pool.yaml
+  - db-ip-pool.yaml
+  - storage-ip-pool.yaml
+  - l2advert.yaml

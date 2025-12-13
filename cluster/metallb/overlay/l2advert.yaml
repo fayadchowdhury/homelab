@@ -1,0 +1,10 @@
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: advert
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - ingress-ip-pool
+    - db-ip-pool
+    - storage-ip-pool
