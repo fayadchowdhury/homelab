@@ -9,9 +9,6 @@ spec:
   selector:
     app: minio
   ports:
-    - name: api
-      port: 9000
-      targetPort: 9000  # Maps to MinIO API
     - name: console
       port: 9001
       targetPort: 9001  # Maps to MinIO Console
