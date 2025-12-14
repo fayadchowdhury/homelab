@@ -1,0 +1,38 @@
+---
+- name: Wait for all machines to become reachable
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Wait for SSH to become available
+      wait_for_connection:
+        timeout: 300
+
+- name: Common tasks
+  hosts: all
+  become: yes
+  roles:
+    - common
+
+- name: Kubernetes setup
+  hosts: all
+  become: yes
+  tasks:
+    - include_role:
+        name: kubernetes
+        tasks_from: install.yaml
+
+- name: Kubernetes master setup
+  hosts: kube-master
+  become: false
+  tasks:
+    - include_role:
+        name: kubernetes
+        tasks_from: init_master.yaml
+
+- name: Kubernetes worker setup
+  hosts: kube-worker
+  become: false
+  tasks:
+    - include_role:
+        name: kubernetes
+        tasks_from: join_worker.yaml

@@ -1,0 +1,47 @@
+---
+- name: Update package repositories
+  apt:
+    update_cache: yes
+
+- name: Upgrade packages to latest version
+  apt:
+    upgrade: dist
+
+- name: Stop systemd-resolved
+  systemd:
+    name: systemd-resolved
+    state: stopped
+    enabled: no
+
+- name: Mask systemd-resolved (prevent re-enabling)
+  command: systemctl mask systemd-resolved
+
+- name: Remove resolv.conf symlink if present
+  file:
+    path: /etc/resolv.conf
+    state: absent
+
+- name: Create new resolv.conf with custom DNS servers
+  copy:
+    dest: /etc/resolv.conf
+    content: |
+      search home.lan
+      nameserver 10.10.10.43
+      nameserver 1.1.1.1
+      nameserver 8.8.8.8
+    mode: '0644'
+
+- name: Disable DNSStubListener in resolved.conf (if present)
+  lineinfile:
+    path: /etc/systemd/resolved.conf
+    regexp: '^#?DNSStubListener='
+    line: 'DNSStubListener=no'
+    create: yes
+
+- name: Remove systemd stub resolve directory (safety)
+  file:
+    path: /run/systemd/resolve/stub-resolv.conf
+    state: absent
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
