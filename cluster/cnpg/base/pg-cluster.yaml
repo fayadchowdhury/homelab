@@ -20,6 +20,8 @@ spec:
           serviceTemplate:
             metadata:
               name: "cnpg-rw-lb"
+              annotations:
+                metallb.universe.tf/loadBalancerIPs: 10.10.10.110
             spec:
               ports:
                 - name: postgresql
