@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: cloudflared
-        image: cloudflare/cloudflare:latest
+        image: cloudflare/cloudflared:latest
         command:
             - cloudflared
             - tunnel
