@@ -10,6 +10,8 @@ spec:
     size: 5Gi
     storageClass: longhorn-single-replica
   
+  enableSuperuserAccess: true
+
   managed:
     services:
       additional:
