@@ -9,9 +9,6 @@ spec:
   storage:
     size: 5Gi
     storageClass: longhorn-single-replica
-
-  superuserSecret:
-    name: pg-superuser-secret
   
   managed:
     services:
@@ -28,10 +25,3 @@ spec:
                   port: 5432
                   targetPort: 5432
               type: LoadBalancer
-
-  bootstrap:
-    initdb:
-      database: appdb
-      owner: appuser
-      secret:
-        name: pg-app-secret

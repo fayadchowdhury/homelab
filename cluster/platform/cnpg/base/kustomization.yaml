@@ -3,6 +3,4 @@ kind: Kustomization
 resources:
 - cnpg.yaml
 - namespace.yaml
-- pg-superuser-secret.yaml
-- pg-app-user-secret.yaml
 - pg-cluster.yaml
