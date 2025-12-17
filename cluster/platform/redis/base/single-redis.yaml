@@ -22,7 +22,6 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
-          command: ["redis-server"]
           args: ["--appendonly", "yes", "--requirepass", "redisadmin"]
   volumeClaimTemplates:
     - metadata:
