@@ -5,3 +5,4 @@ resources:
   - headless-discovery-service.yaml
   - single-redis.yaml
   - loadbalancer.yaml
+  - cluster-ip.yaml
