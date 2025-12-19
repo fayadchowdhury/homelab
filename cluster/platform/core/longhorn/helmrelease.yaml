@@ -14,3 +14,9 @@ spec:
         name: longhorn-repo
       version: v1.10.1
   interval: 1m0s
+  install:
+    timeout: 30m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 30m
