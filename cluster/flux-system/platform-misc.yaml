@@ -8,7 +8,7 @@ spec:
   path: ./cluster/platform/misc
   prune: true
   wait: true
-  timeout: 10m
+  timeout: 20m
   dependsOn:
     - name: platform-data
   sourceRef:
