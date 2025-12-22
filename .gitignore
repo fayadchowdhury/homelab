@@ -14,3 +14,7 @@ terraform.tfvars
 
 # Ansible inventory
 inventory.ini
+
+# SOPS + age
+*.agekey
+*.key
