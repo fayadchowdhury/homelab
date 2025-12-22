@@ -19,7 +19,7 @@ spec:
           imagePullPolicy: Always
           envFrom:
             - secretRef:
-                name: portfolio-secrets
+                name: portfolio-secret
           ports:
             - containerPort: 3000
           resources:
