@@ -4,7 +4,7 @@ metadata:
   name: minio-ingress
   namespace: minio
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
     - host: console.minio.home.com
       http:
