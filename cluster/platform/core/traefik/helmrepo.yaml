@@ -6,4 +6,4 @@ metadata:
   namespace: traefik
 spec:
   interval: 1m0s
-  url: https://charts.traefik.io/traefik
+  url: https://traefik.github.io/charts
