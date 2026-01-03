@@ -1,0 +1,25 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager-release
+  namespace: cert-manager
+spec:
+  chart:
+    spec:
+      chart: cert-manager
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: HelmRepository
+        name: cert-manager-repo
+      version: v1.19
+  values:
+    crds:
+      enabled: true
+  interval: 1m0s
+  install:
+    timeout: 30m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 30m
