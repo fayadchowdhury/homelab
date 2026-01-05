@@ -4,4 +4,5 @@ resources:
 - metallb
 - ingress-nginx
 - longhorn
+- cert-manager
 - traefik
