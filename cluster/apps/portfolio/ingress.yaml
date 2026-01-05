@@ -7,6 +7,10 @@ metadata:
     app.kubernetes.io/name: portfolio-ingress
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - fayadchowdhury.com
+      secretName: fayadchowdhury-wildcard-tls
   rules:
     - host: fayadchowdhury.com
       http:
@@ -18,7 +22,6 @@ spec:
                 name: portfolio-frontend-loadbalancer
                 port:
                   number: 80
-
           - path: /api
             pathType: Prefix
             backend:
