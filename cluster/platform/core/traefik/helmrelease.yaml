@@ -28,7 +28,7 @@ spec:
         enabled: true
         ingressClass: traefik
       kubernetesGateway:
-        enabled: false
+        enabled: true
       kubernetesCRD:
         enabled: false
     ingressClass:
