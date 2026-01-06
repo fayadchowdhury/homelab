@@ -4,4 +4,3 @@ resources:
   - ../base
   - cloudflare-api-token-secret.yaml
   - cloudflare-cluster-issuer.yaml
-  - fayadchowdhury-cert.yaml
