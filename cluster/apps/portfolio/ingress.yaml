@@ -7,10 +7,6 @@ metadata:
     app.kubernetes.io/name: portfolio-ingress
 spec:
   ingressClassName: traefik
-  tls:
-    - hosts:
-        - fayadchowdhury.com
-      secretName: fayadchowdhury-wildcard-tls
   rules:
     - host: fayadchowdhury.com
       http:
