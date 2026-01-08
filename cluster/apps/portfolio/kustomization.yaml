@@ -7,5 +7,4 @@ resources:
 - frontend-loadbalancer.yaml
 - backend-deploy.yaml
 - backend-loadbalancer.yaml
-- ingress.yaml
 - httproute.yaml
