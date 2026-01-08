@@ -8,3 +8,4 @@ resources:
 - backend-deploy.yaml
 - backend-loadbalancer.yaml
 - ingress.yaml
+- httproute.yaml
