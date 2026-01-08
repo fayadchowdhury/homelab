@@ -36,6 +36,38 @@ spec:
       isDefaultClass: false
     service:
       type: LoadBalancer
+    gateway:
+      enabled: true
+      name: traefik-gateway
+      listeners:
+        http-public:
+          port: 8000
+          protocol: HTTP
+          hostname: "fayadchowdhury.com"
+          namespacePolicy:
+            from: All
+        http-public-wildcard:
+          port: 8000
+          protocol: HTTP
+          hostname: "*.fayadchowdhury.com"
+          namespacePolicy:
+            from: All
+        http-internal:
+          port: 8000
+          protocol: HTTP
+          hostname: "*.home.com"
+          namespacePolicy:
+            from: All
+        https-internal:
+          port: 8443
+          protocol: HTTPS
+          hostname: "*.home.com"
+          namespacePolicy:
+            from: All
+          certificateRefs:
+            - name: internal-tls-cert
+              kind: Secret
+          mode: Terminate
     logs:
       general:
         level: INFO
