@@ -30,7 +30,7 @@ spec:
       kubernetesGateway:
         enabled: true
       kubernetesCRD:
-        enabled: false
+        enabled: true
     ingressClass:
       enabled: true
       isDefaultClass: false
@@ -68,6 +68,12 @@ spec:
             - name: internal-tls-cert
               kind: Secret
           mode: Terminate
+    ingressRoute:
+      dashboard:
+        enabled: true
+        matchRule: Host(`traefik-dashboard.home.com`)
+        entryPoints:
+          - web
     logs:
       general:
         level: INFO
