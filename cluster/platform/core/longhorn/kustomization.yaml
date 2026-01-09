@@ -6,3 +6,4 @@ resources:
   - helmrelease.yaml
   - single-replica-storage-class.yaml
   - ingress.yaml
+  - httproute.yaml
