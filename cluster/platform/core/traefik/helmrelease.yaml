@@ -36,6 +36,8 @@ spec:
       isDefaultClass: false
     service:
       type: LoadBalancer
+      annotations:
+        metallb.universe.tf/loadBalancerIPs: 10.10.10.101
     gateway:
       enabled: true
       name: traefik-gateway
