@@ -1,13 +1,13 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: longhorn-httproute
+  name: longhorn-httpsroute
   namespace: longhorn-system
 spec:
   parentRefs:
     - name: traefik-gateway
       namespace: traefik
-      sectionName: web
+      sectionName: websecure
   hostnames:
     - "longhorn.home.com"
   rules:
@@ -15,8 +15,6 @@ spec:
         - path:
             type: PathPrefix
             value: /
-      filters:
-        - type: RequestRedirect
-          requestRedirect:
-            scheme: https
-            statusCode: 301
+      backendRefs:
+        - name: longhorn-frontend
+          port: 80
