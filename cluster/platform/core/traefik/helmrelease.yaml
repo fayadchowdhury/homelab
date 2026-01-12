@@ -43,28 +43,14 @@ spec:
       enabled: true
       name: traefik-gateway
       listeners:
-        http-public:
+        web:
           port: 8000
           protocol: HTTP
-          hostname: "fayadchowdhury.com"
           namespacePolicy:
             from: All
-        http-public-wildcard:
-          port: 8000
-          protocol: HTTP
-          hostname: "*.fayadchowdhury.com"
-          namespacePolicy:
-            from: All
-        http-internal:
-          port: 8000
-          protocol: HTTP
-          hostname: "*.home.com"
-          namespacePolicy:
-            from: All
-        https-internal:
+        websecure:
           port: 8443
           protocol: HTTPS
-          hostname: "*.home.com"
           namespacePolicy:
             from: All
           certificateRefs:
