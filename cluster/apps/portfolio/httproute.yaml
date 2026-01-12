@@ -10,6 +10,7 @@ spec:
       sectionName: web
   hostnames:
     - "fayadchowdhury.com"
+    - "www.fayadchowdhury.com"
   rules:
     - matches:
         - path:
