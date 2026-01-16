@@ -26,7 +26,7 @@
     dest: /etc/resolv.conf
     content: |
       search home.lan
-      nameserver 10.10.10.43
+      nameserver 10.10.10.44
       nameserver 1.1.1.1
       nameserver 8.8.8.8
     mode: '0644'
