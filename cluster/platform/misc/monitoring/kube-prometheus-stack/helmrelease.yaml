@@ -91,9 +91,61 @@ spec:
       service:
         type: ClusterIP
       
-      # No datasources yet - will add in Commit 5
-      additionalDataSources: []
-    
+      additionalDataSources:
+      # -------------------
+      # Prometheus
+      # -------------------
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+        isDefault: true
+        editable: false
+
+      # -------------------
+      # Loki (logs)
+      # -------------------
+      - name: Loki
+        uid: loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.monitoring.svc.cluster.local
+        editable: false
+        jsonData:
+          maxLines: 1000
+
+      # -------------------
+      # Tempo (traces)
+      # -------------------
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.monitoring.svc.cluster.local:3200
+        editable: false
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: loki
+            spanStartTimeShift: "-5m"
+            spanEndTimeShift: "5m"
+            filterByTraceID: true
+            filterBySpanID: true
+            tags:
+              - key: namespace
+                value: namespace
+              - key: pod
+                value: pod
+              - key: container
+                value: container
+
+          tracesToMetrics:
+            datasourceUid: Prometheus
+            spanStartTimeShift: "-5m"
+            spanEndTimeShift: "5m"
+            tags:
+              - key: service.name
+                value: service
+      
     # Node exporter configuration
     prometheus-node-exporter:
       extraArgs:
