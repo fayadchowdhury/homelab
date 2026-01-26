@@ -92,9 +92,7 @@ spec:
         type: ClusterIP
       
       additionalDataSources:
-      # -------------------
       # Prometheus
-      # -------------------
       - name: Prometheus
         type: prometheus
         access: proxy
@@ -102,9 +100,7 @@ spec:
         isDefault: true
         editable: false
 
-      # -------------------
       # Loki (logs)
-      # -------------------
       - name: Loki
         uid: loki
         type: loki
@@ -114,9 +110,7 @@ spec:
         jsonData:
           maxLines: 1000
 
-      # -------------------
       # Tempo (traces)
-      # -------------------
       - name: Tempo
         uid: tempo
         type: tempo
