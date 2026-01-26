@@ -33,8 +33,6 @@ spec:
   values:
     # Deploy as DaemonSet (one pod per node for log collection)
     alloy:
-      clustering:
-        enabled: false
       
       configMap:
         create: true
