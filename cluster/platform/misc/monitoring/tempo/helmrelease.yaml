@@ -18,7 +18,7 @@ spec:
   chart:
     spec:
       chart: tempo
-      version: '>=1.10.3'
+      version: '1.x'
       sourceRef:
         kind: HelmRepository
         name: grafana-tempo
@@ -35,9 +35,6 @@ spec:
     
     # Tempo container configuration
     tempo:
-      repository: grafana/tempo
-      tag: ""  # Use chart default
-      pullPolicy: IfNotPresent
       
       # Resources
       resources:
@@ -49,7 +46,7 @@ spec:
           memory: 1Gi
       
       # Memory ballast for stability
-      memBallastSizeMbs: 256
+      memBallastSizeMbs: 64
       
       # Disable multitenancy for homelab
       multitenancyEnabled: false
@@ -89,16 +86,6 @@ spec:
       
       # Receivers - accept traces in multiple formats
       receivers:
-        jaeger:
-          protocols:
-            grpc:
-              endpoint: 0.0.0.0:14250
-            thrift_binary:
-              endpoint: 0.0.0.0:6832
-            thrift_compact:
-              endpoint: 0.0.0.0:6831
-            thrift_http:
-              endpoint: 0.0.0.0:14268
         otlp:
           protocols:
             grpc:
