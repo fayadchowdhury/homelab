@@ -125,6 +125,40 @@ spec:
               url = "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
             }
           }
+
+          /********************************************
+          * Tracing Pipeline (OTLP Receiver)
+          ********************************************/
+          
+          // Receive OTLP traces
+          otelcol.receiver.otlp "default" {
+            grpc {
+              endpoint = "0.0.0.0:4317"
+            }
+            
+            output {
+              traces = [otelcol.processor.batch.default.input]
+            }
+          }
+          
+          // Batch processor for traces
+          otelcol.processor.batch "default" {
+            timeout = "5s"
+            send_batch_size = 100
+            
+            output {
+              traces = [otelcol.exporter.otlp.tempo.input]
+            }
+          }
+          
+          otelcol.exporter.otlp "tempo" {
+            client {
+              endpoint = "tempo-distributor.monitoring.svc.cluster.local:4317"
+              tls {
+                insecure = true
+              }
+            }
+          }
     
     controller:
       type: "daemonset"
