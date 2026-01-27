@@ -1,4 +1,3 @@
----
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -12,7 +11,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: traefik-repo
-      version: ">=28.0.0"
+      version: "39.x"
   interval: 1m0s
   install:
     timeout: 30m
@@ -63,6 +62,33 @@ spec:
         matchRule: Host(`traefik-dashboard.home.com`)
         entryPoints:
           - web
+    metrics:
+      prometheus:
+        enabled: true
+        entryPoint: metrics
+        addEntryPointsLabels: true
+        addRoutersLabels: true
+        addServicesLabels: true
+        serviceMonitor:
+          enabled: true
+          apiVersion: "monitoring.coreos.com/v1"
+          additionalLabels:
+            release: kube-prometheus-stack
+    tracing:
+      otlp:
+        enabled: true
+        grpc:
+          enabled: true
+          endpoint: alloy.monitoring.svc.cluster.local:4317
+          insecure: true
+          tls: null
     logs:
       general:
         level: INFO
+      access:
+        enabled: true
+        format: json
+        fields:
+          defaultMode: keep
+          headers:
+            defaultMode: keep
