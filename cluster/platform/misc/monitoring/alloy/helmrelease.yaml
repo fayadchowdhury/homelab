@@ -25,13 +25,11 @@ spec:
         namespace: monitoring
       interval: 12h
   
-  # Wait for Loki to be ready
   dependsOn:
     - name: loki
       namespace: monitoring
   
   values:
-    # Deploy as DaemonSet (one pod per node for log collection)
     alloy:
       extraPorts:
         - name: "otlp-grpc"
@@ -108,15 +106,29 @@ spec:
             // Parse CRI format (timestamp, stream, message)
             stage.cri {}
             
-            // Try to parse JSON logs and extract trace context
+            // Extract both formats from JSON
             stage.json {
               expressions = {
+                TraceId  = "TraceId",
+                SpanId   = "SpanId",
                 trace_id = "trace_id",
                 span_id  = "span_id",
               }
             }
             
-            // Add trace_id and span_id as labels (if they exist)
+            // Normalize TraceId -> trace_id using template
+            stage.template {
+              source   = "trace_id"
+              template = "{{ "{{" }} if .trace_id {{ "}}" }}{{ "{{" }} .trace_id {{ "}}" }}{{ "{{" }} else if .TraceId {{ "}}" }}{{ "{{" }} .TraceId {{ "}}" }}{{ "{{" }} end {{ "}}" }}"
+            }
+            
+            // Normalize SpanId -> span_id using template
+            stage.template {
+              source   = "span_id"
+              template = "{{ "{{" }} if .span_id {{ "}}" }}{{ "{{" }} .span_id {{ "}}" }}{{ "{{" }} else if .SpanId {{ "}}" }}{{ "{{" }} .SpanId {{ "}}" }}{{ "{{" }} end {{ "}}" }}"
+            }
+            
+            // Add only the normalized labels
             stage.labels {
               values = {
                 trace_id = "",
@@ -133,7 +145,7 @@ spec:
               url = "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
             }
           }
-
+          
           /********************************************
           * Tracing Pipeline (OTLP Receiver)
           ********************************************/

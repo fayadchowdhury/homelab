@@ -92,16 +92,9 @@ spec:
         type: ClusterIP
       
       additionalDataSources:
-      # Prometheus
-      - name: Prometheus
-        type: prometheus
-        access: proxy
-        url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
-        isDefault: true
-        editable: false
-
       # Loki (logs)
       - name: Loki
+        version: 1
         uid: loki
         type: loki
         access: proxy
@@ -109,9 +102,17 @@ spec:
         editable: false
         jsonData:
           maxLines: 1000
+          derivedFields:
+            - name: trace_id
+              datasourceUid: tempo
+              matcherType: "label"
+              matcherRegex: "trace_id"
+              url: "$${__value.raw}"
+              urlDisplayLabel: "View Trace"
 
       # Tempo (traces)
       - name: Tempo
+        version: 1
         uid: tempo
         type: tempo
         access: proxy
@@ -123,7 +124,6 @@ spec:
             spanStartTimeShift: "-5m"
             spanEndTimeShift: "5m"
             filterByTraceID: true
-            filterBySpanID: true
             tags:
               - key: namespace
                 value: namespace
