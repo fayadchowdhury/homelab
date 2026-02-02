@@ -2,5 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - cnpg.yaml
+- minio-credentials-secret.yaml
+- create-barman-store-bucket-job.yaml
+- scheduled-barman-store-backups.yaml
 - namespace.yaml
 - pg-cluster.yaml
