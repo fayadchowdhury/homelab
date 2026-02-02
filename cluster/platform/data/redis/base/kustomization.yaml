@@ -6,3 +6,5 @@ resources:
   - single-redis.yaml
   - loadbalancer.yaml
   - cluster-ip.yaml
+  - minio-credentials-secret.yaml
+  - scheduled-backups.yaml

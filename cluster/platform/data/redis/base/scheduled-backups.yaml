@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: redis-backup-minio
+  namespace: redis
+spec:
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: redis:7-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              
+              REDIS_HOST="redis-cluster-ip"
+              
+              echo "Testing connection to Redis at ${REDIS_HOST}:6379..."
+              if ! redis-cli -h ${REDIS_HOST} PING > /dev/null 2>&1; then
+                echo "ERROR: Cannot connect to Redis"
+                exit 1
+              fi
+              
+              echo "Connected to Redis successfully!"
+              
+              # Install mc (MinIO client)
+              echo "Installing MinIO client..."
+              wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
+              chmod +x /usr/local/bin/mc
+              
+              # Configure MinIO
+              echo "Configuring MinIO connection..."
+              mc alias set myminio http://minio-backend-loadbalancer.minio.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+              
+              # Create bucket if it doesn't exist
+              mc mb myminio/redis-backups --ignore-existing
+              
+              # Trigger BGSAVE
+              echo "Triggering Redis BGSAVE..."
+              redis-cli -h ${REDIS_HOST} BGSAVE
+              sleep 5
+              
+              # Get RDB file
+              TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+              echo "Creating backup: dump-${TIMESTAMP}.rdb"
+              redis-cli -h ${REDIS_HOST} --rdb /tmp/dump-${TIMESTAMP}.rdb
+              
+              # Upload to MinIO
+              echo "Uploading to MinIO..."
+              mc cp /tmp/dump-${TIMESTAMP}.rdb myminio/redis-backups/dump-${TIMESTAMP}.rdb
+              
+              # Keep only last 30 days
+              echo "Cleaning old backups (older than 30 days)..."
+              mc rm --recursive --force --older-than 30d myminio/redis-backups/ || true
+              
+              # List current backups
+              echo "Current backups:"
+              mc ls myminio/redis-backups/
+              
+              echo "Backup complete!"
+            env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: ACCESS_KEY_ID
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: SECRET_ACCESS_KEY
