@@ -27,9 +27,15 @@ spec:
         - ":9001"
         env:
         - name: MINIO_ROOT_USER
-          value: admin
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: MINIO_ROOT_USER
         - name: MINIO_ROOT_PASSWORD
-          value: admin123
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: MINIO_ROOT_PASSWORD
         ports:
         - containerPort: 9000
         - containerPort: 9001

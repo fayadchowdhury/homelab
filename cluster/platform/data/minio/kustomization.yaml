@@ -4,6 +4,7 @@ resources:
 - namespace.yaml
 - headless-discovery-service.yaml
 - minio.yaml
+- minio-credentials-secret.yaml
 - backend-loadbalancer.yaml
 - frontend-loadbalancer.yaml
 - httproute.yaml
