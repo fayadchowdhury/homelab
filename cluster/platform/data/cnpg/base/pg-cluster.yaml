@@ -14,7 +14,7 @@ spec:
   
   backup:
     barmanObjectStore:
-      destinationPath: s3://cnpg-backups/portfolio-db/
+      destinationPath: s3://cnpg-backups/
       endpointURL: http://minio-backend-loadbalancer.minio.svc.cluster.local:9000
       
       s3Credentials:
