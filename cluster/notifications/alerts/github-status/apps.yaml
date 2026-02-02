@@ -1,0 +1,12 @@
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: apps-github-status
+  namespace: flux-system
+spec:
+  providerRef:
+    name: github-status
+  eventSources:
+    - kind: Kustomization
+      name: apps
+      namespace: flux-system

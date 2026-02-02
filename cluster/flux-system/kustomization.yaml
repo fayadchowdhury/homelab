@@ -7,3 +7,4 @@ resources:
 - platform-data.yaml
 - platform-misc.yaml
 - apps.yaml
+- notifications.yaml
