@@ -1,0 +1,16 @@
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: apps-success
+  namespace: flux-system
+spec:
+  eventMetadata:
+    summary: "✅ Application Deployment Successful"
+    layer: "app"
+  providerRef:
+    name: slack-deployments
+  eventSeverity: info
+  eventSources:
+    - kind: Kustomization
+      name: apps
+      namespace: flux-system

@@ -1,0 +1,19 @@
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: git-errors
+  namespace: flux-system
+spec:
+  eventMetadata:
+    summary: "🚨 Git Repository Sync Failure"
+    layer: "infrastructure"
+    priority: "P0"
+  providerRef:
+    name: slack-critical
+  eventSeverity: error
+  eventSources:
+    - kind: GitRepository
+      name: '*'
+      namespace: flux-system
+  exclusionList:
+    - "waiting.*socket"
