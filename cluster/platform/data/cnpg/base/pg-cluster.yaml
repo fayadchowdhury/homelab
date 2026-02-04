@@ -33,7 +33,7 @@ spec:
         compression: gzip
         jobs: 2
     
-    retentionPolicy: "10d"
+    retentionPolicy: "5d"
   
   managed:
     services:
