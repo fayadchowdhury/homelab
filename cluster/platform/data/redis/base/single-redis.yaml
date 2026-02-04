@@ -22,6 +22,13 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+        - name: redis-exporter-sidecar
+          image: oliver006/redis_exporter:latest
+          args:
+            - "--redis.addr=redis://localhost:6379"
+          ports:
+            - containerPort: 9121
+              name: metrics
   volumeClaimTemplates:
     - metadata:
         name: data

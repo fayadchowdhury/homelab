@@ -5,6 +5,8 @@ resources:
   - headless-discovery-service.yaml
   - single-redis.yaml
   - loadbalancer.yaml
+  - redis-metrics.yaml
+  - redis-metrics-service-monitor.yaml
   - cluster-ip.yaml
   - minio-credentials-secret.yaml
   - scheduled-backups.yaml
