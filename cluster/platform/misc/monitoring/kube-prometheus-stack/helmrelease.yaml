@@ -30,6 +30,15 @@ spec:
     # Prometheus configuration
     prometheus:
       prometheusSpec:
+
+        # Disable default PrometheusRules, ServiceMonitors and PodMonitors selection and pick up all
+        ruleSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        serviceMonitorSelectorNilUsesHelmValues: false
+        ruleNamespaceSelector: {}
+        podMonitorNamespaceSelector: {}
+        serviceMonitorNamespaceSelector: {}
+
         retention: 5d
         
         # Use Longhorn single-replica storage
