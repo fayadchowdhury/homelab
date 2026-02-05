@@ -4,8 +4,7 @@ metadata:
   name: scheduled-barman-store-backups
   namespace: cnpg-pods
 spec:
-  # schedule: "0 0 2 * * *"
-  schedule: "0 */5 * * * *"
+  schedule: "0 0 2 * * *"
   backupOwnerReference: self
   cluster:
     name: postgres-cluster
