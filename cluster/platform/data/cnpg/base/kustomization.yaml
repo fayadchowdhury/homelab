@@ -4,6 +4,7 @@ resources:
 - cnpg.yaml
 - barman-cloud-plugin.yaml
 - minio-credentials-secret.yaml
+- create-barman-bucket.yaml
 - barman-object-store.yaml
 - scheduled-barman-store-backups.yaml
 - namespace.yaml

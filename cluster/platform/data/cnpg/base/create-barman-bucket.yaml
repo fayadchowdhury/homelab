@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: create-barman-bucket
+  namespace: cnpg-pods
+  annotations:
+    description: "Ensures the backup bucket exists, creating it if necessary"
+spec:
+  schedule: "0 * * * *"  # Every hour
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Replace
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: bucket-maintenance
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: ensure-bucket
+              image: amazon/aws-cli:2.15.17
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: minio-credentials
+                      key: ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: minio-credentials
+                      key: SECRET_ACCESS_KEY
+                - name: ENDPOINT_URL
+                  value: "http://minio-backend-loadbalancer.minio.svc.cluster.local:9000"
+                - name: BUCKET_NAME
+                  value: "cnpg-backups"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  
+                  echo "Checking if bucket s3://${BUCKET_NAME}/ exists..."
+                  
+                  if aws s3 ls "s3://${BUCKET_NAME}/" --endpoint-url "${ENDPOINT_URL}" 2>/dev/null; then
+                    echo "✓ Bucket exists. Nothing to do."
+                    exit 0
+                  else
+                    echo "✗ Bucket does not exist. Creating..."
+                    aws s3 mb "s3://${BUCKET_NAME}/" --endpoint-url "${ENDPOINT_URL}"
+                    echo "✓ Bucket created successfully!"
+                    exit 0
+                  fi
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
