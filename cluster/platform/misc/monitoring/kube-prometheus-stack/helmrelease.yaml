@@ -165,6 +165,8 @@ spec:
     alertmanager:
       enabled: true
       alertmanagerSpec:
+        alertmanagerConfigNamespaceSelector: {}
+        alertmanagerConfigSelector: {}
         storage:
           volumeClaimTemplate:
             spec:
