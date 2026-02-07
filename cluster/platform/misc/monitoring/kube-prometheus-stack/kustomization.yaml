@@ -7,3 +7,5 @@ resources:
   - helmrelease.yaml
   - httproute.yaml
   - httpsroute.yaml
+  - prometheus-rules
+  - alertmanager-configs

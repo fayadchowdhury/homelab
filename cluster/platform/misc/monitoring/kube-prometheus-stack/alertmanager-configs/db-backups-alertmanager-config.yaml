@@ -1,0 +1,125 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: backup-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+spec:
+  route:
+    receiver: backup-slack
+    groupBy:
+    - namespace
+    - service
+    - alertname
+    groupWait: 10s
+    groupInterval: 5m
+    repeatInterval: 12h
+    matchers:
+    - name: category
+      value: backup
+      matchType: "="
+    routes:
+    - receiver: backup-slack-critical
+      matchers:
+      - name: severity
+        value: critical
+        matchType: "="
+      groupWait: 5s
+      repeatInterval: 4h
+      continue: false
+    - receiver: backup-slack-warning
+      matchers:
+      - name: severity
+        value: warning
+        matchType: "="
+      continue: false
+    - receiver: backup-slack-info
+      matchers:
+      - name: severity
+        value: info
+        matchType: "="
+      continue: false
+
+  receivers:
+  - name: backup-slack-critical
+    slackConfigs:
+    - apiURL:
+        name: alertmanager-slack-webhook
+        key: webhook-url
+      channel: '#observability'
+      username: 'Prometheus Alerts'
+      iconEmoji: ':rotating_light:'
+      title: '🔴 CRITICAL: {{ .GroupLabels.service | toUpper }} Backup Failure'
+      text: |
+        {{ range .Alerts }}
+        *Alert:* {{ .Annotations.summary }}
+        *Severity:* {{ .Labels.severity | toUpper }}
+        *Service:* {{ .Labels.service | toUpper }}
+        *Namespace:* {{ .Labels.namespace }}
+        *Description:* {{ .Annotations.description }}
+        *Fired At:* {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+        {{ end }}
+      sendResolved: true
+      color: danger
+      footer: 'Backup Monitoring System'
+  
+  - name: backup-slack-warning
+    slackConfigs:
+    - apiURL:
+        name: alertmanager-slack-webhook
+        key: webhook-url
+      channel: '#observability'
+      username: 'Prometheus Alerts'
+      iconEmoji: ':warning:'
+      title: '⚠️ WARNING: {{ .GroupLabels.service | toUpper }} Backup Issue'
+      text: |
+        {{ range .Alerts }}
+        *Alert:* {{ .Annotations.summary }}
+        *Severity:* {{ .Labels.severity | toUpper }}
+        *Service:* {{ .Labels.service | toUpper }}
+        *Namespace:* {{ .Labels.namespace }}
+        *Description:* {{ .Annotations.description }}
+        *Fired At:* {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+        {{ end }}
+      sendResolved: true
+      color: warning
+      footer: 'Backup Monitoring System'
+  
+  - name: backup-slack-info
+    slackConfigs:
+    - apiURL:
+        name: alertmanager-slack-webhook
+        key: webhook-url
+      channel: '#observability'
+      username: 'Prometheus Alerts'
+      iconEmoji: ':white_check_mark:'
+      title: '✅ {{ .GroupLabels.service | toUpper }} Backup Success'
+      text: |
+        {{ range .Alerts }}
+        *{{ .Annotations.summary }}*
+        *Service:* {{ .Labels.service | toUpper }}
+        *Namespace:* {{ .Labels.namespace }}
+        *Completed At:* {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+        {{ end }}
+      sendResolved: false
+      color: good
+      footer: 'Backup Monitoring System'
+  
+  - name: backup-slack
+    slackConfigs:
+    - apiURL:
+        name: alertmanager-slack-webhook
+        key: webhook-url
+      channel: '#observability'
+      username: 'Prometheus Alerts'
+      iconEmoji: ':bell:'
+      title: '🔔 {{ .GroupLabels.service | toUpper }} Backup Alert'
+      text: |
+        {{ range .Alerts }}
+        *Alert:* {{ .Annotations.summary }}
+        *Description:* {{ .Annotations.description }}
+        {{ end }}
+      sendResolved: true
+      color: '#439FE0'
+      footer: 'Backup Monitoring System'

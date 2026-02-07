@@ -1,0 +1,136 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: backup-monitoring
+  namespace: monitoring
+spec:
+  groups:
+  # Recording rules - separate metrics for each backup type
+  - name: backup.recording.rules
+    interval: 60s
+    rules:
+    # Redis backup last completion timestamp
+    - record: backup_redis:last_completion:timestamp_seconds
+      expr: |
+        max(
+          kube_job_status_completion_time{
+            namespace="redis",
+            job_name=~"redis-backup-minio.*"
+          }
+        ) by (namespace)
+    
+    # CNPG backup last available timestamp (max across all cluster pods)
+    - record: backup_cnpg:last_available:timestamp_seconds
+      expr: |
+        max(
+          cnpg_collector_last_available_backup_timestamp{
+            namespace="cnpg-pods"
+          }
+        ) by (namespace)
+    
+    # Redis backup age in seconds
+    - record: backup_redis:age:seconds
+      expr: time() - backup_redis:last_completion:timestamp_seconds
+    
+    # CNPG backup age in seconds
+    - record: backup_cnpg:age:seconds
+      expr: time() - backup_cnpg:last_available:timestamp_seconds
+
+  # Alert rules
+  - name: backup.alerts
+    interval: 60s
+    rules:
+    # Redis backup is overdue (>30 hours since last completion)
+    - alert: RedisBackupOverdue
+      expr: backup_redis:age:seconds > 108000
+      for: 1h
+      labels:
+        severity: warning
+        category: backup
+        component: redis
+        service: redis
+      annotations:
+        summary: "Redis backup is overdue"
+        description: "Redis backup in namespace {{ $labels.namespace }} hasn't completed in {{ $value | humanizeDuration }}. Expected daily backups at 2:00 AM UTC. Threshold: 30 hours (24h schedule + 6h grace period)."
+    
+    # CNPG backup is overdue (>30 hours since last available)
+    - alert: CNPGBackupOverdue
+      expr: backup_cnpg:age:seconds > 108000
+      for: 1h
+      labels:
+        severity: warning
+        category: backup
+        component: cnpg
+        service: cnpg
+      annotations:
+        summary: "CNPG backup is overdue"
+        description: "CNPG backup in namespace {{ $labels.namespace }} hasn't been available in {{ $value | humanizeDuration }}. Expected daily backups at 2:00 AM UTC. Threshold: 30 hours (24h schedule + 6h grace period)."
+    
+    # Critical: Redis backup job failed
+    - alert: RedisBackupJobFailed
+      expr: |
+        kube_job_status_failed{
+          namespace="redis",
+          job_name=~"redis-backup-minio.*"
+        } > 0
+      for: 2m
+      labels:
+        severity: critical
+        category: backup
+        component: redis
+        service: redis
+      annotations:
+        summary: "Redis backup job failed"
+        description: "Redis backup job {{ $labels.job_name }} in namespace {{ $labels.namespace }} has failed. Check pod logs for details."
+    
+    # Info: Redis backup succeeded
+    - alert: RedisBackupSucceeded
+      expr: |
+        kube_job_status_succeeded{
+          namespace="redis",
+          job_name=~"redis-backup-minio.*"
+        } > 0
+        and
+        changes(kube_job_status_succeeded{
+          namespace="redis",
+          job_name=~"redis-backup-minio.*"
+        }[5m]) > 0
+      labels:
+        severity: info
+        category: backup
+        component: redis
+        service: redis
+      annotations:
+        summary: "Redis backup completed successfully"
+        description: "Redis backup job {{ $labels.job_name }} in namespace {{ $labels.namespace }} completed successfully."
+    
+    # Critical: CNPG has no backup available (max timestamp is 0)
+    - alert: CNPGNoBackupAvailable
+      expr: |
+        max(
+          cnpg_collector_last_available_backup_timestamp{namespace="cnpg-pods"}
+        ) by (namespace) == 0
+      for: 10m
+      labels:
+        severity: critical
+        category: backup
+        component: cnpg
+        service: cnpg
+      annotations:
+        summary: "CNPG has no available backup"
+        description: "CNPG cluster in namespace {{ $labels.namespace }} reports no available backup across all pods. This indicates backups have never run successfully, failed validation, or have been deleted. Immediate action required."
+    
+    # Info: CNPG backup became available
+    - alert: CNPGBackupAvailable
+      expr: |
+        changes(backup_cnpg:last_available:timestamp_seconds[5m]) > 0
+        and
+        backup_cnpg:last_available:timestamp_seconds > 0
+      labels:
+        severity: info
+        category: backup
+        component: cnpg
+        service: cnpg
+      annotations:
+        summary: "CNPG backup completed successfully"
+        description: "CNPG cluster in namespace {{ $labels.namespace }} has a new backup available."
