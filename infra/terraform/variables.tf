@@ -44,6 +44,10 @@ variable "VM_DEFINITIONS" {
         memory = number
         storage_location = string
         storage_size = string
+        extra_disk = optional(object({
+            storage = string
+            size    = string
+        }))
         ipv4 = string
         gw = string
         cloudinit_disk_storage = string

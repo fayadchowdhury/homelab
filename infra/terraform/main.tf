@@ -47,6 +47,16 @@ resource "proxmox_vm_qemu" "vms" {
           size      = each.value.storage_size # Size of disk
         }
       }
+      # Optional extra disk (scsi1) for Longhorn PVs
+      dynamic "scsi1" {
+        for_each = lookup(each.value, "extra_disk", null) != null ? [each.value.extra_disk] : []
+        content {
+          disk {
+            storage = scsi1.value.storage
+            size    = scsi1.value.size
+          }
+        }
+      }
     }
     ide {
       # IDE (CD-ROM) for cloud-init disk
