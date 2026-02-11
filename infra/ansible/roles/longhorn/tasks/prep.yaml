@@ -1,0 +1,120 @@
+---
+- name: Check if extra disk exists
+  ansible.builtin.stat:
+    path: /dev/sdb
+  register: extra_disk
+
+- name: Verify extra disk was found
+  ansible.builtin.assert:
+    that:
+      - extra_disk.stat.exists
+      - extra_disk.stat.isblk
+    fail_msg: "Expected block device /dev/sdb not found on {{ inventory_hostname }}"
+    success_msg: "Found extra disk /dev/sdb on {{ inventory_hostname }}"
+
+- name: Install disk management packages
+  ansible.builtin.apt:
+    name:
+      - parted
+      - xfsprogs
+      - util-linux
+    state: present
+    update_cache: yes
+
+- name: Check if disk already has partitions
+  ansible.builtin.command: lsblk -no FSTYPE /dev/sdb
+  register: disk_fstype
+  changed_when: false
+  failed_when: false
+
+- name: Create GPT partition table
+  community.general.parted:
+    device: /dev/sdb
+    label: gpt
+    number: 1
+    state: present
+    part_end: "100%"
+  register: partition_result
+
+- name: Wait for kernel to recognize new partition
+  ansible.builtin.wait_for:
+    path: /dev/sdb1
+    timeout: 10
+  when: partition_result.changed
+
+- name: Check if filesystem already exists
+  ansible.builtin.command: blkid -s TYPE -o value /dev/sdb1
+  register: existing_fs
+  changed_when: false
+  failed_when: false
+
+- name: Create XFS filesystem on partition
+  community.general.filesystem:
+    fstype: xfs
+    dev: /dev/sdb1
+    force: no
+  when: existing_fs.rc != 0 or existing_fs.stdout == ""
+  register: filesystem_created
+
+- name: Get UUID of the partition
+  ansible.builtin.command: blkid -s UUID -o value /dev/sdb1
+  register: disk_uuid
+  changed_when: false
+
+- name: Display disk UUID
+  ansible.builtin.debug:
+    msg: "Disk UUID for {{ inventory_hostname }}: {{ disk_uuid.stdout }}"
+
+- name: Create Longhorn data directory
+  ansible.builtin.file:
+    path: /var/lib/longhorn
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Check if already mounted
+  ansible.builtin.command: mountpoint -q /var/lib/longhorn
+  register: already_mounted
+  changed_when: false
+  failed_when: false
+
+- name: Add disk to fstab
+  ansible.posix.mount:
+    path: /var/lib/longhorn
+    src: "UUID={{ disk_uuid.stdout }}"
+    fstype: xfs
+    opts: defaults,noatime,nodiratime
+    state: present
+  register: fstab_updated
+
+- name: Mount the Longhorn disk
+  ansible.posix.mount:
+    path: /var/lib/longhorn
+    src: "UUID={{ disk_uuid.stdout }}"
+    fstype: xfs
+    opts: defaults,noatime,nodiratime
+    state: mounted
+
+- name: Verify mount is successful
+  ansible.builtin.command: mountpoint /var/lib/longhorn
+  changed_when: false
+  register: mount_verified
+
+- name: Check available space on Longhorn mount
+  ansible.builtin.command: df -h /var/lib/longhorn
+  register: disk_space
+  changed_when: false
+
+- name: Display Longhorn disk space
+  ansible.builtin.debug:
+    msg: "{{ disk_space.stdout_lines }}"
+
+- name: Set correct permissions on Longhorn directory
+  ansible.builtin.file:
+    path: /var/lib/longhorn
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+    recurse: no

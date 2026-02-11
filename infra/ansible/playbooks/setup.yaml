@@ -13,6 +13,14 @@
   roles:
     - common
 
+- name: Longhorn prep
+  hosts: store
+  become: yes
+  tasks:
+    - include_role:
+        name: longhorn
+        tasks_from: prep.yaml
+
 - name: Kubernetes setup
   hosts: all
   become: yes
