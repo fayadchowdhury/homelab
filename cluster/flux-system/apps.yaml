@@ -10,7 +10,7 @@ spec:
   wait: true
   timeout: 20m
   dependsOn:
-    - name: platform-misc
+    - name: platform
   sourceRef:
     kind: GitRepository
     name: flux-system

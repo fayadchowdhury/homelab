@@ -1,16 +1,16 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: platform-misc
+  name: platform
   namespace: flux-system
 spec:
   interval: 5m
-  path: ./cluster/platform/misc
+  path: ./cluster/platform
   prune: true
   wait: true
   timeout: 20m
   dependsOn:
-    - name: platform-data
+    - name: core
   sourceRef:
     kind: GitRepository
     name: flux-system
@@ -18,3 +18,8 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: traefik
+      namespace: traefik
