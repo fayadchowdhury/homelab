@@ -5,4 +5,3 @@ resources:
   - cloudflare-api-token-secret.yaml
   - cloudflare-cluster-issuer.yaml
   - self-signed-cluster-issuer.yaml
-  - internal-tls-cert.yaml
