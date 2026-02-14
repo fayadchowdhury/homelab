@@ -8,6 +8,7 @@ spec:
   path: ./cluster/core
   prune: true
   wait: true
+  force: true
   timeout: 20m
   retryInterval: 30s
   sourceRef:
