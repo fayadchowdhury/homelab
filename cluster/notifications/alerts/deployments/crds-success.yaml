@@ -1,18 +1,18 @@
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Alert
 metadata:
-  name: platform-success
+  name: crds-success
   namespace: flux-system
 spec:
   eventMetadata:
-    summary: "✅ Platform Deployment Successful"
-    layer: "platform"
+    summary: "✅ CRDs Creation Successful"
+    layer: "crds"
   providerRef:
     name: slack-deployments
   eventSeverity: info
   eventSources:
     - kind: Kustomization
-      name: platform
+      name: crds
       namespace: flux-system
   inclusionList:
     - "configured$"

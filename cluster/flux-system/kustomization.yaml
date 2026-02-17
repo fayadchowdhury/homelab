@@ -3,8 +3,10 @@ kind: Kustomization
 resources:
 - gotk-components.yaml
 - gotk-sync.yaml
-- platform-core.yaml
-- platform-data.yaml
-- platform-misc.yaml
+- crds.yaml
+- core.yaml
+- config.yaml
+- gateway.yaml
+- platform.yaml
 - apps.yaml
 - notifications.yaml

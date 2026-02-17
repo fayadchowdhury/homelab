@@ -2,5 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - git-errors.yaml
+  - crds-errors.yaml
+  - core-errors.yaml
+  - config-errors.yaml
+  - gateway-errors.yaml
   - platform-errors.yaml
   - apps-errors.yaml

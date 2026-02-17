@@ -1,5 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - crds-success.yaml
+  - core-success.yaml
+  - config-success.yaml
+  - gateway-success.yaml
   - platform-success.yaml
   - apps-success.yaml

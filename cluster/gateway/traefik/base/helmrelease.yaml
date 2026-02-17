@@ -1,0 +1,91 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  chart:
+    spec:
+      chart: traefik
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: HelmRepository
+        name: traefik-repo
+      version: "39.x"
+  interval: 1m0s
+  install:
+    timeout: 30m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 30m
+    force: true
+  values:
+    deployment:
+      replicas: 1
+    providers:
+      kubernetesIngress:
+        enabled: true
+        ingressClass: traefik
+      kubernetesGateway:
+        enabled: true
+      kubernetesCRD:
+        enabled: true
+    ingressClass:
+      enabled: true
+      isDefaultClass: false
+    service:
+      type: LoadBalancer
+      annotations:
+        metallb.universe.tf/loadBalancerIPs: 10.10.10.101
+    gateway:
+      enabled: true
+      name: traefik-gateway
+      listeners:
+        web:
+          port: 8000
+          protocol: HTTP
+          namespacePolicy:
+            from: All
+        websecure:
+          port: 8443
+          protocol: HTTPS
+          namespacePolicy:
+            from: All
+          certificateRefs:
+            - name: internal-tls-cert
+              kind: Secret
+          mode: Terminate
+    ingressRoute:
+      dashboard:
+        enabled: true
+        matchRule: Host(`traefik-dashboard.home.com`)
+        entryPoints:
+          - web
+    metrics:
+      prometheus:
+        enabled: true
+        entryPoint: metrics
+        addEntryPointsLabels: true
+        addRoutersLabels: true
+        addServicesLabels: true
+        serviceMonitor:
+          enabled: false
+    tracing:
+      otlp:
+        enabled: true
+        grpc:
+          enabled: true
+          endpoint: alloy.monitoring.svc.cluster.local:4317
+          insecure: true
+          tls: null
+    logs:
+      general:
+        level: INFO
+      access:
+        enabled: true
+        format: json
+        fields:
+          defaultMode: keep
+          headers:
+            defaultMode: keep

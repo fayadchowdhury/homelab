@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   eventMetadata:
-    summary: "✅ Application Deployment Successful"
+    summary: "✅ Application Layer Deployment Successful"
     layer: "app"
   providerRef:
     name: slack-deployments

@@ -1,17 +1,12 @@
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Alert
 metadata:
-  name: platform-errors
+  name: crds-github-status
   namespace: flux-system
 spec:
-  eventMetadata:
-    summary: "🚨 Platform Failure"
-    layer: "platform"
-    priority: "P0"
   providerRef:
-    name: slack-critical
-  eventSeverity: error
+    name: github-status
   eventSources:
     - kind: Kustomization
-      name: platform
+      name: crds
       namespace: flux-system

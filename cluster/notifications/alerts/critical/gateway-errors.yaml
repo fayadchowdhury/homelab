@@ -1,17 +1,17 @@
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Alert
 metadata:
-  name: platform-errors
+  name: gateway-errors
   namespace: flux-system
 spec:
   eventMetadata:
-    summary: "🚨 Platform Failure"
-    layer: "platform"
+    summary: "🚨 Gateway Failure"
+    layer: "gateway"
     priority: "P0"
   providerRef:
     name: slack-critical
   eventSeverity: error
   eventSources:
     - kind: Kustomization
-      name: platform
+      name: gateway
       namespace: flux-system

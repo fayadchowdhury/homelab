@@ -1,18 +1,18 @@
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Alert
 metadata:
-  name: platform-success
+  name: config-success
   namespace: flux-system
 spec:
   eventMetadata:
-    summary: "✅ Platform Deployment Successful"
-    layer: "platform"
+    summary: "✅ Config Layer Deployment Successful"
+    layer: "config"
   providerRef:
     name: slack-deployments
   eventSeverity: info
   eventSources:
     - kind: Kustomization
-      name: platform
+      name: config
       namespace: flux-system
   inclusionList:
     - "configured$"
