@@ -39,11 +39,11 @@ spec:
       # Resources
       resources:
         requests:
-          cpu: 200m
-          memory: 256Mi
+          cpu: "200m"
+          memory: "256Mi"
         limits:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: "1000m"
+          memory: "1Gi"
       
       # Memory ballast for stability
       memBallastSizeMbs: 64
@@ -68,8 +68,8 @@ spec:
         traces_storage:
           path: "/var/tempo/wal"
       
-      # Retention period (5 days to match Loki)
-      retention: 120h
+      # Retention period (3 days to match Loki)
+      retention: 72h
       
       # Server configuration
       server:

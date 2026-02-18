@@ -22,7 +22,7 @@ spec:
     force: true
   values:
     deployment:
-      replicas: 1
+      replicas: 2
     providers:
       kubernetesIngress:
         enabled: true
@@ -89,3 +89,10 @@ spec:
           defaultMode: keep
           headers:
             defaultMode: keep
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"

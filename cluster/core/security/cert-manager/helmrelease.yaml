@@ -16,6 +16,29 @@ spec:
   values:
     crds:
       enabled: true
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+      limits:
+        cpu: "100m"
+        memory: "256Mi"
+    webhook:
+      resources:
+        requests:
+          cpu: "25m"
+          memory: "64Mi"
+        limits:
+          cpu: "50m"
+          memory: "128Mi"
+    cainjector:
+      resources:
+        requests:
+          cpu: "25m"
+          memory: "64Mi"
+        limits:
+          cpu: "50m"
+          memory: "128Mi"
   interval: 1m0s
   install:
     timeout: 30m

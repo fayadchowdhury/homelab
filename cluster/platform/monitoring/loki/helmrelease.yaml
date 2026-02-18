@@ -40,6 +40,14 @@ spec:
       storage:
         type: filesystem
 
+      resources:
+        requests:
+          cpu: "200m"
+          memory: "512Mi"
+        limits:
+          cpu: "1000m"
+          memory: "1Gi"
+
       schemaConfig:
         configs:
           - from: "2024-01-01"
@@ -51,8 +59,8 @@ spec:
               period: 24h
 
       limits_config:
-        retention_period: 120h
-        max_query_length: 120h
+        retention_period: 72h
+        max_query_length: 72h
         ingestion_rate_mb: 10
         ingestion_burst_size_mb: 20
 

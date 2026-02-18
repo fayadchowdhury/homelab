@@ -32,6 +32,16 @@ spec:
     crds:
       enabled: false
 
+    # Prometheus Operator configuration
+    prometheusOperator:
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+
     # Prometheus configuration
     prometheus:
       prometheusSpec:
@@ -44,8 +54,16 @@ spec:
         podMonitorNamespaceSelector: {}
         serviceMonitorNamespaceSelector: {}
 
-        retention: 5d
+        retention: 3d
         
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1.5Gi"
+          limits:
+            cpu: "2000m"
+            memory: "2.5Gi"
+
         # Use Longhorn single-replica storage
         storageSpec:
           volumeClaimTemplate:
@@ -95,6 +113,14 @@ spec:
       plugins:
         - grafana-piechart-panel
       
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+
       # Persistence
       persistence:
         enabled: true
@@ -161,10 +187,24 @@ spec:
         - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
         - --collector.hwmon
         - --collector.thermal_zone
+      resources:
+        requests:
+          cpu: "25m"
+          memory: "64Mi"
+        limits:
+          cpu: "100m"
+          memory: "128Mi"
     
     # kube-state-metrics
     kube-state-metrics:
       enabled: true
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "300m"
+          memory: "256Mi"
     
     # Alertmanager
     alertmanager:
@@ -180,3 +220,10 @@ spec:
               resources:
                 requests:
                   storage: 5Gi
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"

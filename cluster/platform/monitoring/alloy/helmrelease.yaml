@@ -186,11 +186,11 @@ spec:
     # Resources for each Alloy pod
     resources:
       requests:
-        cpu: 100m
-        memory: 128Mi
+        cpu: "50m"
+        memory: "128Mi"
       limits:
-        cpu: 500m
-        memory: 512Mi
+        cpu: "200m"
+        memory: "256Mi"
     
     # ServiceMonitor for Prometheus to scrape Alloy metrics
     serviceMonitor:

@@ -19,3 +19,11 @@ spec:
       retries: 3
   upgrade:
     timeout: 30m
+  values:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
