@@ -43,5 +43,11 @@
     path: /run/systemd/resolve/stub-resolv.conf
     state: absent
 
+- name: Set timezone to America/Vancouver
+  command: timedatectl set-timezone America/Vancouver
+
+- name: Enable NTP
+  command: timedatectl set-ntp true
+
 - name: Reload systemd daemon
   command: systemctl daemon-reload
