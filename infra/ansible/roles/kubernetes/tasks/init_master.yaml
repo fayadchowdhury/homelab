@@ -1,4 +1,3 @@
----
 - name: Initialize kubeadm master
   become: yes
   command: |

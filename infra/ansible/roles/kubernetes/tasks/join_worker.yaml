@@ -1,4 +1,3 @@
----
 - name: Join cluster as worker
   become: yes
   shell: "{{ hostvars[groups['kube-master'][0]].kube_join_command }}"

@@ -1,0 +1,60 @@
+- name: Apply role labels to nodes
+  command: kubectl label node {{ item.1 }} role/{{ item.0.key }}=true --overwrite
+  with_subelements:
+    - "{{ role_mappings | dict2items }}"
+    - value
+  loop_control:
+    label: "{{ item.1 }} -> role/{{ item.0.key }}"
+  vars:
+    role_mappings:
+      control: "{{ groups['control'] }}"
+      compute: "{{ groups['compute'] }}"
+      monitor: "{{ groups['monitor'] }}"
+      store: "{{ groups['store'] }}"
+      db: "{{ groups['db'] }}"
+
+- name: Apply taints to specialized nodes
+  command: >
+    kubectl taint nodes {{ item.1 }}
+    {{ item.0.taint_key }}={{ item.0.taint_value }}:{{ item.0.effect }}
+    --overwrite
+  loop: "{{ taint_configs | subelements('nodes') }}"
+  loop_control:
+    label: "{{ item.1 }} -> {{ item.0.taint_key }}:{{ item.0.effect }}"
+  vars:
+    taint_configs:
+      - taint_key: "node-role.kubernetes.io/control-plane"
+        taint_value: ""
+        effect: "NoSchedule"
+        nodes: "{{ groups['control'] }}"
+      
+      - taint_key: "workload"
+        taint_value: "database"
+        effect: "NoSchedule"
+        nodes: "{{ groups['db'] }}"
+      
+      - taint_key: "workload"
+        taint_value: "storage"
+        effect: "NoSchedule"
+        nodes: "{{ groups['store'] }}"
+      
+      - taint_key: "workload"
+        taint_value: "monitoring"
+        effect: "PreferNoSchedule"
+        nodes: "{{ groups['monitor'] }}"
+  register: taint_result
+  changed_when: "'tainted' in taint_result.stdout or 'updated' in taint_result.stdout"
+
+- name: Get node labels and taints
+  shell: |
+    echo "=== NODE LABELS ==="
+    kubectl get nodes -L role/control,role/compute,role/monitor,role/store,role/db
+    echo ""
+    echo "=== NODE TAINTS ==="
+    kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
+  register: node_config
+  changed_when: false
+
+- name: Display node configuration
+  debug:
+    msg: "{{ node_config.stdout_lines }}"

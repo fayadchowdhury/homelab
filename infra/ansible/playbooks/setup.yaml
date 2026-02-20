@@ -1,4 +1,3 @@
----
 - name: Wait for all machines to become reachable
   hosts: all
   gather_facts: no
@@ -44,3 +43,11 @@
     - include_role:
         name: kubernetes
         tasks_from: join_worker.yaml
+
+- name: Label Kubernetes nodes
+  hosts: localhost
+  become: false
+  tasks:
+    - include_role:
+        name: kubernetes
+        tasks_from: configure_nodes.yaml
