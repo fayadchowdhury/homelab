@@ -139,5 +139,5 @@ spec:
     # Persistence - use Longhorn single-replica
     persistence:
       enabled: true
-      storageClassName: longhorn-single-replica
+      storageClassName: longhorn-slow-single-replica
       size: 10Gi

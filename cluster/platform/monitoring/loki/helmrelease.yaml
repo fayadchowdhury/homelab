@@ -68,7 +68,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: longhorn-single-replica
+        storageClass: longhorn-slow-single-replica
         size: 10Gi
       resources:
         requests:

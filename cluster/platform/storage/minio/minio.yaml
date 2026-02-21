@@ -47,7 +47,7 @@ spec:
       name: data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: longhorn-single-replica
+      storageClassName: longhorn-slow-single-replica
       resources:
         requests:
           storage: 5Gi
