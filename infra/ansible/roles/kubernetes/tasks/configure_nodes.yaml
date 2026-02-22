@@ -13,37 +13,49 @@
       store: "{{ groups['store'] }}"
       db: "{{ groups['db'] }}"
 
-- name: Apply taints to specialized nodes
+- name: Taint control-plane nodes (NoSchedule)
   command: >
-    kubectl taint nodes {{ item.1 }}
-    {{ item.0.taint_key }}={{ item.0.taint_value }}:{{ item.0.effect }}
+    kubectl taint nodes {{ item }}
+    node-role.kubernetes.io/control-plane=:NoSchedule
     --overwrite
-  loop: "{{ taint_configs | subelements('nodes') }}"
+  loop: "{{ groups['control'] }}"
   loop_control:
-    label: "{{ item.1 }} -> {{ item.0.taint_key }}:{{ item.0.effect }}"
-  vars:
-    taint_configs:
-      - taint_key: "node-role.kubernetes.io/control-plane"
-        taint_value: ""
-        effect: "NoSchedule"
-        nodes: "{{ groups['control'] }}"
+    label: "{{ item }} -> control-plane NoSchedule"
+  register: control_taint
+  changed_when: "'tainted' in control_taint.stdout or 'updated' in control_taint.stdout"
+
+
+# - name: Apply taints to specialized nodes
+#   command: >
+#     kubectl taint nodes {{ item.1 }}
+#     {{ item.0.taint_key }}={{ item.0.taint_value }}:{{ item.0.effect }}
+#     --overwrite
+#   loop: "{{ taint_configs | subelements('nodes') }}"
+#   loop_control:
+#     label: "{{ item.1 }} -> {{ item.0.taint_key }}:{{ item.0.effect }}"
+#   vars:
+#     taint_configs:
+#       - taint_key: "node-role.kubernetes.io/control-plane"
+#         taint_value: ""
+#         effect: "NoSchedule"
+#         nodes: "{{ groups['control'] }}"
       
-      - taint_key: "workload"
-        taint_value: "database"
-        effect: "NoSchedule"
-        nodes: "{{ groups['db'] }}"
+#       - taint_key: "workload"
+#         taint_value: "database"
+#         effect: "NoSchedule"
+#         nodes: "{{ groups['db'] }}"
       
-      - taint_key: "workload"
-        taint_value: "storage"
-        effect: "NoSchedule"
-        nodes: "{{ groups['store'] }}"
+#       - taint_key: "workload"
+#         taint_value: "storage"
+#         effect: "NoSchedule"
+#         nodes: "{{ groups['store'] }}"
       
-      - taint_key: "workload"
-        taint_value: "monitoring"
-        effect: "PreferNoSchedule"
-        nodes: "{{ groups['monitor'] }}"
-  register: taint_result
-  changed_when: "'tainted' in taint_result.stdout or 'updated' in taint_result.stdout"
+#       - taint_key: "workload"
+#         taint_value: "monitoring"
+#         effect: "PreferNoSchedule"
+#         nodes: "{{ groups['monitor'] }}"
+#   register: taint_result
+#   changed_when: "'tainted' in taint_result.stdout or 'updated' in taint_result.stdout"
 
 - name: Get node labels and taints
   shell: |
