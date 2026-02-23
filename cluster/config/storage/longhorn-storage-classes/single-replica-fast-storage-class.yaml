@@ -7,6 +7,7 @@ parameters:
   numberOfReplicas: "1"
   staleReplicaTimeout: "30"
   diskSelector: "ssd"
+  dataLocality: "strict-local"
 reclaimPolicy: Retain
 allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
