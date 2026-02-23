@@ -9,7 +9,19 @@ spec:
   storage:
     size: 5Gi
     storageClass: longhorn-fast-single-replica
-  
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: role/db
+            operator: In
+            values:
+            - "true"
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+
   enableSuperuserAccess: true
   
   plugins:

@@ -14,6 +14,23 @@ spec:
       labels:
         app: minio
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: role/store
+                operator: In
+                values:
+                - "true"
+
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: minio
+            topologyKey: kubernetes.io/hostname
+
       containers:
       - name: minio
         image: quay.io/minio/minio:latest
@@ -42,6 +59,13 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
   volumeClaimTemplates:
   - metadata:
       name: data
@@ -51,10 +75,3 @@ spec:
       resources:
         requests:
           storage: 5Gi
-  resources:
-    requests:
-      cpu: "250m"
-      memory: "512Mi"
-    limits:
-      cpu: "1000m"
-      memory: "1Gi"

@@ -64,6 +64,16 @@ spec:
             cpu: "2000m"
             memory: "2.5Gi"
 
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: role/monitor
+                      operator: In
+                      values:
+                        - "true"
+
         # Use Longhorn single-replica storage
         storageSpec:
           volumeClaimTemplate:
@@ -120,6 +130,16 @@ spec:
         limits:
           cpu: "500m"
           memory: "512Mi"
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role/monitor
+                    operator: In
+                    values:
+                      - "true"
 
       # Persistence
       persistence:
@@ -205,6 +225,15 @@ spec:
         limits:
           cpu: "300m"
           memory: "256Mi"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role/monitor
+                    operator: In
+                    values:
+                      - "true"
     
     # Alertmanager
     alertmanager:
@@ -227,3 +256,12 @@ spec:
           limits:
             cpu: "200m"
             memory: "256Mi"
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: role/monitor
+                      operator: In
+                      values:
+                        - "true"
