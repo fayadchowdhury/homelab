@@ -13,7 +13,6 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 3221225472
       tags:
       - "ssd"
 ---
@@ -31,7 +30,6 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 3221225472
       tags:
       - "ssd"
 ---
@@ -49,7 +47,6 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 6442450944
       tags:
       - "ssd"
 ---
@@ -67,7 +64,6 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 8589934592
       tags:
       - "ssd"
 ---
@@ -85,7 +81,6 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 8589934592
       tags:
       - "ssd"
 ---
@@ -103,7 +98,6 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 85899345920
       tags:
       - "hdd"
 ---
@@ -121,7 +115,6 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 85899345920
       tags:
       - "hdd"
 ---
@@ -139,7 +132,6 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 10737418240
       tags:
       - "hdd"
 ---
@@ -157,6 +149,5 @@ spec:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
-      storageReserved: 10737418240
       tags:
       - "hdd"
