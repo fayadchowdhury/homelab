@@ -41,6 +41,15 @@ spec:
         limits:
           cpu: "500m"
           memory: "512Mi"
+      affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: role/monitor
+                      operator: In
+                      values:
+                        - "true"
 
     # Prometheus configuration
     prometheus:
