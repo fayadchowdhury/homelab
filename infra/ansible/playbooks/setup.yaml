@@ -13,7 +13,7 @@
     - common
 
 - name: Longhorn prep
-  hosts: store
+  hosts: kube-worker
   become: yes
   tasks:
     - include_role:
