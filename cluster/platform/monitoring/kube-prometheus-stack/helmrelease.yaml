@@ -82,7 +82,7 @@ spec:
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
-                  storage: 20Gi
+                  storage: 15Gi
         
         # Auto-discover pods with prometheus.io annotations
         additionalScrapeConfigs:
