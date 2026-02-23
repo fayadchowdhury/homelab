@@ -21,6 +21,8 @@ spec:
   upgrade:
     timeout: 30m
   values:
+    defaultSettings:
+      createDefaultDiskLabeledNodes: true
     longhornManager:
       resources:
         requests:
