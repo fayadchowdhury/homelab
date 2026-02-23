@@ -78,7 +78,7 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: longhorn-slow-single-replica
+              storageClassName: longhorn-fast-single-replica
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
@@ -145,7 +145,7 @@ spec:
       persistence:
         enabled: true
         size: 5Gi
-        storageClassName: longhorn-slow-single-replica
+        storageClassName: longhorn-fast-single-replica
       
       # Service - ClusterIP for use with Traefik
       service:
@@ -244,7 +244,7 @@ spec:
         storage:
           volumeClaimTemplate:
             spec:
-              storageClassName: longhorn-slow-single-replica
+              storageClassName: longhorn-fast-single-replica
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
