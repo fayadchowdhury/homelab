@@ -9,7 +9,7 @@ spec:
   evictionRequested: false
   
   disks:
-    monitoring-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
@@ -27,7 +27,7 @@ spec:
   evictionRequested: false
   
   disks:
-    monitoring-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
@@ -45,7 +45,7 @@ spec:
   evictionRequested: false
   
   disks:
-    database-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
@@ -63,7 +63,7 @@ spec:
   evictionRequested: false
   
   disks:
-    database-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
@@ -81,7 +81,7 @@ spec:
   evictionRequested: false
   
   disks:
-    database-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
@@ -99,7 +99,7 @@ spec:
   evictionRequested: false
   
   disks:
-    minio-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
@@ -117,7 +117,7 @@ spec:
   evictionRequested: false
   
   disks:
-    minio-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
@@ -135,7 +135,7 @@ spec:
   evictionRequested: false
   
   disks:
-    minio-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
@@ -153,7 +153,7 @@ spec:
   evictionRequested: false
   
   disks:
-    minio-disk:
+    disk:
       path: /var/lib/longhorn
       allowScheduling: true
       evictionRequested: false
