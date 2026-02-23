@@ -32,6 +32,16 @@ spec:
   values:
     # Number of Tempo instances
     replicas: 1
+
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: role/monitor
+                  operator: In
+                  values:
+                    - "true"
     
     # Tempo container configuration
     tempo:
@@ -44,16 +54,6 @@ spec:
         limits:
           cpu: "1000m"
           memory: "1Gi"
-
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: role/monitor
-                    operator: In
-                    values:
-                      - "true"
       
       # Memory ballast for stability
       memBallastSizeMbs: 64
