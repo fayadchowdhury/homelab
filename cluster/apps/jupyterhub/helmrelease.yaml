@@ -33,7 +33,7 @@ spec:
       config:
         JupyterHub:
           authenticator_class: nativeauthenticator.NativeAuthenticator
-          admin_access: false
+          admin_access: true
         Authenticator:
           admin_users:
             - admin
