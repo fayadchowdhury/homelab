@@ -35,7 +35,7 @@ spec:
           authenticator_class: nativeauthenticator.NativeAuthenticator
           admin_access: false
         Authenticator:
-          admin_user:
+          admin_users:
             - admin
         NativeAuthenticator:
           enable_signup: true
