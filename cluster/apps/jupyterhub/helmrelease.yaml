@@ -1,0 +1,120 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jupyterhub
+  namespace: jupyterhub
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: jupyterhub
+      version: '4.x'  # Pin to specific version
+      sourceRef:
+        kind: HelmRepository
+        name: jupyterhub
+        namespace: jupyterhub
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    hub:
+      nodeSelector:
+        role/store: "true"
+      db:
+        type: sqlite-pvc
+        pvc:
+          storageClassName: longhorn-slow-single-replica
+          storage: 1Gi
+      
+      config:
+        JupyterHub:
+          authenticator_class: nativeauthenticator.NativeAuthenticator
+        NativeAuthenticator:
+          open_signup: true
+          ask_email_on_signup: true
+          check_common_password: true
+          minimum_password_length: 10
+          allowed_failed_logins: 3
+          seconds_before_next_try: 300
+      
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          memory: 1Gi
+    
+    # Single-user notebook configuration
+    singleuser:
+      nodeSelector:
+        role/compute: "true"
+      
+      extraPodConfig:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: role/compute
+                      operator: In
+                      values:
+                        - "true"
+      storage:
+        type: dynamic
+        dynamic:
+          storageClass: longhorn-slow-single-replica
+          pvcNameTemplate: jupyter-{username}
+          volumeNameTemplate: jupyter-{username}
+          storageAccessModes:
+            - ReadWriteOnce
+        capacity: 5Gi
+      
+      image:
+        name: jupyter/minimal-notebook
+        tag: latest
+      
+      cpu:
+        limit: 2
+        guarantee: 0.5
+      memory:
+        limit: 2G
+        guarantee: 1G
+      
+      # Lifecycle hooks for cleanup
+      lifecycleHooks:
+        postStart:
+          exec:
+            command: ["/bin/sh", "-c", "echo 'Notebook starting'"]
+    
+    # Proxy configuration
+    proxy:
+      service:
+        type: ClusterIP
+      chp:
+        nodeSelector:
+          role/store: "true"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+    
+    # Scheduling
+    scheduling:
+      userScheduler:
+        enabled: false  # Can enable for better pod distribution
+      
+      podPriority:
+        enabled: false
+      
+      userPlaceholder:
+        enabled: false  # Enable to pre-warm nodes
+    
+    # Culling idle notebooks
+    cull:
+      enabled: true
+      timeout: 1800
+      every: 600
