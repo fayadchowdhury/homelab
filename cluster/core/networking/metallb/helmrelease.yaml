@@ -16,8 +16,14 @@ spec:
         namespace: metallb-system
   install:
     crds: CreateReplace
+    remediation:
+      retries: 3
+    timeout: 30m
   upgrade:
     crds: CreateReplace
+    remediation:
+      retries: 3
+    timeout: 30m
   values:
     speaker:
       frr:

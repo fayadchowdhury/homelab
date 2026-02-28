@@ -21,9 +21,9 @@ spec:
     secretRef:
       name: sops-age
   healthChecks:
-    - apiVersion: apps/v1
-      kind: DaemonSet
-      name: metallb-speaker
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: metallb
       namespace: metallb-system
     - apiVersion: apps/v1
       kind: Deployment
