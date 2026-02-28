@@ -33,9 +33,12 @@ spec:
       config:
         JupyterHub:
           authenticator_class: nativeauthenticator.NativeAuthenticator
+          admin_access: false
+        Authenticator:
+          admin_user:
+            - admin
         NativeAuthenticator:
-          open_signup: true
-          ask_email_on_signup: true
+          enable_signup: true
           check_common_password: true
           minimum_password_length: 10
           allowed_failed_logins: 3
