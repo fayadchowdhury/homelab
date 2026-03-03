@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: airflow-db-init
+  namespace: airflow
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: psql
+          image: postgres:16
+          env:
+            # CNPG superuser credentials
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: cnpg-superuser
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cnpg-superuser
+                  key: password
+
+            # App credentials
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-db-credentials
+                  key: username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-db-credentials
+                  key: password
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-db-credentials
+                  key: database
+
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              PGHOST=postgres-cluster-rw.cnpg-pods.svc
+              PGDATABASE=postgres
+
+              echo "Creating role ${APP_DB_USER}..."
+              
+              # Create role - ignore error if already exists
+              psql -h $PGHOST -d $PGDATABASE -v ON_ERROR_STOP=0 <<EOF
+              CREATE ROLE ${APP_DB_USER} LOGIN PASSWORD '${APP_DB_PASSWORD}' 
+                NOSUPERUSER NOCREATEDB NOCREATEROLE;
+              EOF
+
+              echo "Creating database ${APP_DB_NAME}..."
+              
+              # Create database - ignore error if already exists
+              psql -h $PGHOST -d $PGDATABASE -v ON_ERROR_STOP=0 <<EOF
+              CREATE DATABASE ${APP_DB_NAME} OWNER ${APP_DB_USER} 
+                ENCODING 'UTF8' TEMPLATE template0;
+              EOF
+
+              # Grant privileges
+              psql -h $PGHOST -d $PGDATABASE <<EOF
+              GRANT ALL PRIVILEGES ON DATABASE ${APP_DB_NAME} TO ${APP_DB_USER};
+              EOF
+
+              echo "Database provisioning complete."
