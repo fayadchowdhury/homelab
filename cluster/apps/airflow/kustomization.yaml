@@ -9,5 +9,7 @@ resources:
 - metadata-db-airflow-credentials-secret.yaml
 - metadata-db-init-job.yaml
 - metadata-db-secret.yaml
+- create-minio-log-bucket.yaml
+- minio-credentials-secret.yaml
 - helmrepository.yaml
 - helmrelease.yaml
