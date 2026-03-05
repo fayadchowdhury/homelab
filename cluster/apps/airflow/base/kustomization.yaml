@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- namespace.yaml
+- httproute.yaml
+- httpsroute.yaml
+- minio-connection-secret.yaml
+- metadata-db-airflow-credentials-secret.yaml
+- metadata-db-init-job-serviceaccount.yaml
+- metadata-db-init-job.yaml
+- metadata-db-secret.yaml
+- create-minio-log-bucket.yaml
+- minio-credentials-secret.yaml
+- helmrepository.yaml
+- helmrelease.yaml
