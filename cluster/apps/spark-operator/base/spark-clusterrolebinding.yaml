@@ -10,3 +10,6 @@ subjects:
   - kind: ServiceAccount
     name: spark
     namespace: spark-jobs
+  - kind: ServiceAccount
+    name: jupyterhub-spark
+    namespace: jupyterhub
