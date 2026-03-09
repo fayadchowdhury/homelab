@@ -83,7 +83,7 @@ spec:
       
       image:
         name: fayadchowdhury/data-jupyter-image
-        tag: 1.0.0
+        tag: 1.0.1
       
       cpu:
         limit: 2
