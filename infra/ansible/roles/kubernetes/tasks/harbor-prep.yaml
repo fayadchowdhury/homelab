@@ -1,0 +1,77 @@
+- name: Verify required secrets are defined
+  ansible.builtin.assert:
+    that:
+      - dockerhub_username is defined
+      - dockerhub_username | length > 0
+      - dockerhub_token is defined
+      - dockerhub_token | length > 0
+    fail_msg: >
+      dockerhub_username and dockerhub_token must be set in
+      group_vars/all/secret.yml. Copy secret.yml.example to
+      secret.yml and fill in your Docker Hub credentials.
+    success_msg: "Docker Hub credentials verified."
+
+- name: Create containerd certs.d base directory
+  ansible.builtin.file:
+    path: /etc/containerd/certs.d
+    state: directory
+    mode: '0755'
+
+- name: Create per-registry certs.d directories
+  ansible.builtin.file:
+    path: "/etc/containerd/certs.d/{{ item.key }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ registry_mirrors | dict2items }}"
+  # item.key = 'dockerhub', 'ghcr', 'quay', 'k8s-registry'
+
+- name: Write hosts.toml mirror config for each registry
+  ansible.builtin.copy:
+    dest: "/etc/containerd/certs.d/{{ item.key }}/hosts.toml"
+    content: |
+      server = "{{ item.value.upstream }}"
+
+      [host."http://localhost:{{ harbor_nodeport }}/v2/{{ item.value.harbor_project }}"]
+        capabilities = ["pull", "resolve"]
+        override_path = true
+        skip_verify = true
+    mode: '0644'
+  loop: "{{ registry_mirrors | dict2items }}"
+
+- name: Create containerd config.d directory
+  ansible.builtin.file:
+    path: /etc/containerd/config.d
+    state: directory
+    mode: '0755'
+
+- name: Write Docker Hub auth and activate certs.d
+  ansible.builtin.copy:
+    dest: /etc/containerd/config.d/dockerhub-auth.toml
+    content: |
+      [plugins."io.containerd.grpc.v1.cri".registry]
+        config_path = "/etc/containerd/certs.d"
+
+      [plugins."io.containerd.grpc.v1.cri".registry.configs."registry-1.docker.io".auth]
+        username = "{{ dockerhub_username }}"
+        password = "{{ dockerhub_token }}"
+    mode: '0600'
+  no_log: true
+
+- name: Restart containerd to apply config.d changes
+  ansible.builtin.systemd:
+    name: containerd
+    state: restarted
+
+- name: Verify containerd is running after restart
+  ansible.builtin.systemd:
+    name: containerd
+    state: started
+    enabled: true
+  register: containerd_status
+
+- name: Confirm containerd is active
+  ansible.builtin.assert:
+    that:
+      - containerd_status.status.ActiveState == "active"
+    fail_msg: "containerd failed to start after registry configuration. Check journalctl -u containerd."
+    success_msg: "containerd is running with Harbor mirror configuration."

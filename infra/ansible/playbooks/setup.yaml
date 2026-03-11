@@ -28,6 +28,14 @@
         name: kubernetes
         tasks_from: install.yaml
 
+- name: Configure containerd registry mirror for Harbor
+  hosts: kube-master:kube-worker
+  become: true
+  tasks:
+    - include_role:
+        name: kubernetes
+        tasks_from: harbor-prep.yaml
+
 - name: Kubernetes master setup
   hosts: kube-master
   become: false
