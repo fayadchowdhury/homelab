@@ -1,0 +1,47 @@
+# Filled in by the helper script "generate_inventory.py"
+# Ideal structure
+# [label]
+# hostname ansible_host=<IP_ADDRESS>
+# labels are generated from VM tags from the Terraform script
+
+[kube-master]
+k8s-worker-1 ansible_host=<IP_ADDRESS>
+k8s-worker-2 ansible_host=<IP_ADDRESS>
+k8s-worker-3 ansible_host=<IP_ADDRESS>
+...
+
+[control]
+k8s-worker-1 ansible_host=<IP_ADDRESS>
+k8s-worker-2 ansible_host=<IP_ADDRESS>
+k8s-worker-3 ansible_host=<IP_ADDRESS>
+...
+
+[kube-worker]
+k8s-worker-1 ansible_host=<IP_ADDRESS>
+k8s-worker-2 ansible_host=<IP_ADDRESS>
+k8s-worker-3 ansible_host=<IP_ADDRESS>
+...
+
+[compute]
+k8s-worker-1 ansible_host=<IP_ADDRESS>
+k8s-worker-2 ansible_host=<IP_ADDRESS>
+k8s-worker-3 ansible_host=<IP_ADDRESS>
+...
+
+[monitor]
+k8s-worker-1 ansible_host=<IP_ADDRESS>
+k8s-worker-2 ansible_host=<IP_ADDRESS>
+k8s-worker-3 ansible_host=<IP_ADDRESS>
+...
+
+[db]
+k8s-worker-1 ansible_host=<IP_ADDRESS>
+k8s-worker-2 ansible_host=<IP_ADDRESS>
+k8s-worker-3 ansible_host=<IP_ADDRESS>
+...
+
+[store]
+k8s-worker-1 ansible_host=<IP_ADDRESS>
+k8s-worker-2 ansible_host=<IP_ADDRESS>
+k8s-worker-3 ansible_host=<IP_ADDRESS>
+...

@@ -1,0 +1,15 @@
+harbor_nodeport: 30500
+
+registry_mirrors:
+  dockerhub:
+    upstream: "https://registry-1.docker.io"
+    harbor_project: "dockerhub"
+  ghcr:
+    upstream: "https://ghcr.io"
+    harbor_project: "ghcr"
+  quay:
+    upstream: "https://quay.io"
+    harbor_project: "quay"
+  k8s-registry:
+    upstream: "https://registry.k8s.io"
+    harbor_project: "k8s-registry"
