@@ -33,6 +33,9 @@ spec:
     
     data:
       metadataSecretName: airflow-metadata-db-connection
+
+    images:
+      migrationsWaitTimeout: 900
     
     # DAGs Configuration
     dags:
@@ -85,13 +88,6 @@ spec:
 
       useHelmHooks: false
       applyCustomEnv: false
-
-    # Triggerer Configuration
-    triggerer:
-      persistence:
-        enabled: true
-        size: 5Gi
-        storageClassName: longhorn-slow-single-replica
     
     # Prometheus Metrics
     statsd:
@@ -103,6 +99,53 @@ spec:
       labels:
         release: kube-prometheus-stack
     
+    apiServer:
+      startupProbe:
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        timeoutSeconds: 20
+        failureThreshold: 60
+      livenessProbe:
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        timeoutSeconds: 20
+        failureThreshold: 5
+      readinessProbe:
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        timeoutSeconds: 20
+        failureThreshold: 5
+
+    scheduler:
+      startupProbe:
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        timeoutSeconds: 20
+        failureThreshold: 60
+      livenessProbe:
+        initialDelaySeconds: 10
+        periodSeconds: 60
+        timeoutSeconds: 20
+        failureThreshold: 5
+
+    dagProcessor:
+      livenessProbe:
+        initialDelaySeconds: 10
+        periodSeconds: 60
+        timeoutSeconds: 20
+        failureThreshold: 5
+    
+    triggerer:
+      livenessProbe:
+        initialDelaySeconds: 10
+        periodSeconds: 60
+        timeoutSeconds: 20
+        failureThreshold: 5
+      persistence:
+        enabled: true
+        size: 5Gi
+        storageClassName: longhorn-slow-single-replica
+
     # Global Node Affinity
     affinity:
       nodeAffinity:
