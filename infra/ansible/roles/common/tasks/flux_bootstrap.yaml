@@ -1,0 +1,84 @@
+- name: Verify age key is defined
+  ansible.builtin.assert:
+    that:
+      - age_key is defined
+      - age_key | length > 0
+    fail_msg: >
+      age_key must be set in group_vars/all/secret.yml.
+      Paste the full contents of your age.agekey file as a
+      multiline string value.
+    success_msg: "Age key verified."
+
+- name: Verify Flux bootstrap variables are defined
+  ansible.builtin.assert:
+    that:
+      - github_token is defined
+      - github_token | length > 0
+      - github_owner is defined
+      - github_owner | length > 0
+      - github_repo is defined
+      - github_repo | length > 0
+      - flux_cluster_path is defined
+      - flux_cluster_path | length > 0
+    fail_msg: >
+      github_token, github_owner, github_repo, and flux_cluster_path
+      must all be set in group_vars/all/secret.yml.
+    success_msg: "Flux bootstrap variables verified."
+
+- name: Wait for all nodes to be Ready
+  ansible.builtin.shell: |
+    kubectl wait nodes \
+      --all \
+      --for=condition=Ready \
+      --timeout=300s
+  register: nodes_ready
+  changed_when: false
+
+- name: Show node ready status
+  ansible.builtin.debug:
+    msg: "{{ nodes_ready.stdout_lines }}"
+
+- name: Create flux-system namespace
+  ansible.builtin.shell: |
+    kubectl create namespace flux-system \
+      --dry-run=client -o yaml | kubectl apply -f -
+  changed_when: false
+
+- name: Write age key to temporary file on master
+  ansible.builtin.copy:
+    content: "{{ age_key }}"
+    dest: /tmp/age.agekey
+    mode: '0600'
+  no_log: true
+
+- name: Create sops-age secret in flux-system namespace
+  ansible.builtin.shell: |
+    kubectl create secret generic sops-age \
+      --namespace=flux-system \
+      --from-file=age.agekey=/tmp/age.agekey \
+      --dry-run=client -o yaml | kubectl apply -f -
+  no_log: true
+  changed_when: false
+
+- name: Remove temporary age key file
+  ansible.builtin.file:
+    path: /tmp/age.agekey
+    state: absent
+
+- name: Bootstrap Flux
+  ansible.builtin.shell: |
+    flux bootstrap github \
+      --token-auth \
+      --owner={{ github_owner }} \
+      --repository={{ github_repo }} \
+      --branch=master \
+      --path={{ flux_cluster_path }} \
+      --personal
+  environment:
+    GITHUB_TOKEN: "{{ github_token }}"
+  register: flux_bootstrap_result
+  changed_when: "'already up to date' not in flux_bootstrap_result.stdout"
+
+- name: Show Flux bootstrap output
+  ansible.builtin.debug:
+    msg: "{{ flux_bootstrap_result.stdout_lines }}"

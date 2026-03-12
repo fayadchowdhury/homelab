@@ -59,3 +59,11 @@
     - include_role:
         name: kubernetes
         tasks_from: configure_nodes.yaml
+
+- name: Flux bootstrap
+  hosts: localhost
+  become: false
+  tasks:
+    - include_role:
+        name: common
+        tasks_from: flux_bootstrap.yaml
