@@ -5,3 +5,4 @@ resources:
 - monitoring
 - storage
 - utilities
+- registry

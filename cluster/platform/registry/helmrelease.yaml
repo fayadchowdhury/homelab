@@ -1,0 +1,61 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: harbor
+  namespace: harbor
+spec:
+  interval: 30m
+  timeout: 15m
+  chart:
+    spec:
+      chart: harbor
+      version: "1.x.x"
+      sourceRef:
+        kind: HelmRepository
+        name: harbor
+        namespace: harbor
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    expose:
+      type: nodePort
+      nodePort:
+        ports:
+          http:
+            nodePort: 30500
+      tls:
+        enabled: false
+
+    externalURL: http://localhost:30500
+
+    persistence:
+      enabled: true
+      resourcePolicy: keep
+      persistentVolumeClaim:
+        registry:
+          storageClass: longhorn-slow-single-replica
+          size: 10Gi
+        database:
+          storageClass: longhorn-slow-single-replica
+          size: 2Gi
+        redis:
+          storageClass: longhorn-slow-single-replica
+          size: 250Mi
+
+    existingSecretAdminPassword: harbor-admin-secret
+    existingSecretAdminPasswordKey: password
+
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: role/store
+                  operator: In
+                  values:
+                    - "true"
