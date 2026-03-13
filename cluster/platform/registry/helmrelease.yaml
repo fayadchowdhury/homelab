@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: harbor
-      version: "1.x.x"
+      version: "1.18.2"
       sourceRef:
         kind: HelmRepository
         name: harbor
@@ -21,41 +21,121 @@ spec:
   upgrade:
     remediation:
       retries: 3
+
   values:
     expose:
-      type: nodePort
-      nodePort:
-        ports:
-          http:
-            nodePort: 30500
+      type: clusterIP
       tls:
         enabled: false
 
-    externalURL: http://localhost:30500
-
-    persistence:
-      enabled: true
-      resourcePolicy: keep
-      persistentVolumeClaim:
-        registry:
-          storageClass: longhorn-slow-single-replica
-          size: 10Gi
-        database:
-          storageClass: longhorn-slow-single-replica
-          size: 2Gi
-        redis:
-          storageClass: longhorn-slow-single-replica
-          size: 250Mi
+    externalURL: https://harbor.home.com
 
     existingSecretAdminPassword: harbor-admin-secret
     existingSecretAdminPasswordKey: password
 
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-            - matchExpressions:
-                - key: role/store
-                  operator: In
-                  values:
-                    - "true"
+    database:
+      type: external
+      external:
+        host: "postgres-cluster-rw.cnpg-pods.svc.cluster.local"
+        port: "5432"
+        username: "harbor"
+        coreDatabase: "harbor"
+        existingSecret: harbor-db-credentials
+        existingSecretKey: password
+
+    redis:
+      type: external
+      external:
+        addr: "redis-cluster-ip.redis.svc.cluster.local:6379"
+        sentinelMasterSet: ""
+
+    persistence:
+      enabled: true
+      resourcePolicy: "keep"
+      imageChartStorage:
+        disableredirect: true
+        type: s3
+        s3:
+          bucket: harbor
+          region: us-east-1
+          regionendpoint: "http://minio-backend-loadbalancer.minio.svc.cluster.local:9000"
+          secure: false
+          existingSecret: harbor-minio-credentials
+
+      persistentVolumeClaim:
+        jobservice:
+          jobLog:
+            storageClass: longhorn-slow-single-replica
+            accessMode: ReadWriteOnce
+            size: 1Gi
+        trivy:
+          storageClass: longhorn-slow-single-replica
+          accessMode: ReadWriteOnce
+          size: 5Gi
+
+    trivy:
+      enabled: true
+
+    notary:
+      enabled: false
+
+    nginx:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role/store
+                    operator: In
+                    values:
+                      - "true"
+    portal:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role/store
+                    operator: In
+                    values:
+                      - "true"
+    core:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role/store
+                    operator: In
+                    values:
+                      - "true"
+    jobservice:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role/store
+                    operator: In
+                    values:
+                      - "true"
+    registry:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role/store
+                    operator: In
+                    values:
+                      - "true"
+    exporter:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role/store
+                    operator: In
+                    values:
+                      - "true"

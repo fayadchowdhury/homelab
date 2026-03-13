@@ -1,0 +1,96 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: harbor-db-init
+  namespace: harbor
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: harbor-db-init
+      restartPolicy: OnFailure
+      
+      initContainers:
+        - name: fetch-secrets
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Fetching superuser credentials from cnpg-pods namespace..."
+              kubectl get secret postgres-cluster-superuser -n cnpg-pods \
+                -o jsonpath='{.data.username}' | base64 -d > /secrets/pg-username
+              kubectl get secret postgres-cluster-superuser -n cnpg-pods \
+                -o jsonpath='{.data.password}' | base64 -d > /secrets/pg-password
+              echo "Credentials fetched successfully"
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+      
+      containers:
+        - name: psql
+          image: postgres:16
+          env:
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-db-credentials
+                  key: username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-db-credentials
+                  key: password
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-db-credentials
+                  key: database
+
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              # Read superuser credentials from files
+              export PGUSER=$(cat /secrets/pg-username)
+              export PGPASSWORD=$(cat /secrets/pg-password)
+              export PGHOST=postgres-cluster-rw.cnpg-pods.svc
+              export PGDATABASE=postgres
+
+              echo "Waiting for PostgreSQL..."
+              until pg_isready -h $PGHOST; do
+                echo "Waiting..."
+                sleep 2
+              done
+
+              echo "Creating role ${APP_DB_USER}..."
+              psql -h $PGHOST -d $PGDATABASE -v ON_ERROR_STOP=0 <<EOF
+              CREATE ROLE ${APP_DB_USER} LOGIN PASSWORD '${APP_DB_PASSWORD}' 
+                NOSUPERUSER NOCREATEDB NOCREATEROLE;
+              EOF
+
+              echo "Creating database ${APP_DB_NAME}..."
+              psql -h $PGHOST -d $PGDATABASE -v ON_ERROR_STOP=0 <<EOF
+              CREATE DATABASE ${APP_DB_NAME} OWNER ${APP_DB_USER} 
+                ENCODING 'UTF8' TEMPLATE template0;
+              EOF
+
+              echo "Granting privileges..."
+              psql -h $PGHOST -d $PGDATABASE <<EOF
+              GRANT ALL PRIVILEGES ON DATABASE ${APP_DB_NAME} TO ${APP_DB_USER};
+              EOF
+
+              echo "Database provisioning complete."
+          
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+      
+      volumes:
+        - name: secrets
+          emptyDir:
+            medium: Memory

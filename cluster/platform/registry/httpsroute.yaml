@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: harbor-httpsroute
+  namespace: harbor
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames:
+    - harbor.home.com
+  rules:
+    - backendRefs:
+        - name: harbor
+          port: 80
