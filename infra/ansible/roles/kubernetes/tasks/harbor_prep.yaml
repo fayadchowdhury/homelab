@@ -39,9 +39,10 @@
       [host."{{ harbor_scheme }}://{{ harbor_hostname }}/v2/{{ item.value.harbor_project }}"]
         capabilities = ["pull", "resolve"]
         override_path = true
+        skip_verify = true
     mode: '0644'
   loop: "{{ registry_mirrors | dict2items }}"
-  notify: Restart containerd
+  register: hosts_toml
 
 - name: Create containerd config.d directory
   ansible.builtin.file:
@@ -53,7 +54,7 @@
   ansible.builtin.file:
     path: /etc/containerd/config.d/dockerhub-auth.toml
     state: absent
-  notify: Restart containerd
+  register: old_dropin
 
 - name: Write config.d drop-in — activate certs.d and DockerHub auth
   ansible.builtin.copy:
@@ -67,7 +68,7 @@
         password = "{{ dockerhub_token }}"
     mode: '0600'
   no_log: true
-  notify: Restart containerd
+  register: mirrors_dropin
 
 - name: Enable config.d imports in containerd config.toml
   ansible.builtin.lineinfile:
@@ -76,10 +77,17 @@
     line: 'imports = ["/etc/containerd/config.d/*.toml"]'
     insertafter: BOF
     backrefs: no
-  notify: Restart containerd
+  register: imports_line
 
-- name: Flush handlers to restart containerd now
-  ansible.builtin.meta: flush_handlers
+- name: Restart containerd if any config changed
+  ansible.builtin.systemd:
+    name: containerd
+    state: restarted
+  when: >
+    hosts_toml.changed or
+    old_dropin.changed or
+    mirrors_dropin.changed or
+    imports_line.changed
 
 - name: Wait for containerd to stabilise
   ansible.builtin.pause:
