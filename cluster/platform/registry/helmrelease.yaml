@@ -16,6 +16,7 @@ spec:
         namespace: harbor
       interval: 12h
   install:
+    timeout: 60m
     remediation:
       retries: 3
   upgrade:

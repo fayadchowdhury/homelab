@@ -8,6 +8,7 @@ spec:
   timeout: 15m
 
   install:
+    timeout: 60m
     remediation:
       retries: 3
 
