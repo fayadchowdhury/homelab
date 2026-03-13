@@ -8,7 +8,7 @@ spec:
   path: ./cluster/platform
   prune: true
   wait: true
-  timeout: 20m
+  timeout: 120m
   dependsOn:
     - name: gateway
   sourceRef:
