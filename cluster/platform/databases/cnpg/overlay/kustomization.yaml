@@ -5,3 +5,5 @@ resources:
   - pgvector.yaml
   - read-superuser-secret-role.yaml
   - multi-namespace-superuser-secret-rolebinding.yaml
+  - read-cluster-clusterrole.yaml
+  - multi-namespace-cluster-read-clusterrolebinding.yaml
