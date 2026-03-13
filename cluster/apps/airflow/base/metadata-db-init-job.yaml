@@ -4,12 +4,12 @@ metadata:
   name: airflow-db-init
   namespace: airflow
 spec:
-  backoffLimit: 3
+  backoffLimit: 6
   template:
     spec:
       serviceAccountName: airflow-db-init
       restartPolicy: OnFailure
-      
+
       initContainers:
         - name: fetch-secrets
           image: bitnami/kubectl:latest
@@ -18,6 +18,14 @@ spec:
             - -c
             - |
               set -e
+              echo "Waiting for CNPG cluster to be ready..."
+              until kubectl get cluster postgres-cluster -n cnpg-pods \
+                -o jsonpath='{.status.phase}' 2>/dev/null | grep -q "Cluster in healthy state"; do
+                echo "  CNPG not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "CNPG cluster is healthy."
+
               echo "Fetching superuser credentials from cnpg-pods namespace..."
               kubectl get secret postgres-cluster-superuser -n cnpg-pods \
                 -o jsonpath='{.data.username}' | base64 -d > /secrets/pg-username
@@ -27,12 +35,11 @@ spec:
           volumeMounts:
             - name: secrets
               mountPath: /secrets
-      
+
       containers:
         - name: psql
           image: postgres:16
           env:
-            # App credentials from airflow namespace
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -48,34 +55,33 @@ spec:
                 secretKeyRef:
                   name: airflow-db-credentials
                   key: database
-
           command:
             - /bin/bash
             - -c
             - |
               set -e
 
-              # Read superuser credentials from files
               export PGUSER=$(cat /secrets/pg-username)
               export PGPASSWORD=$(cat /secrets/pg-password)
               export PGHOST=postgres-cluster-rw.cnpg-pods.svc
               export PGDATABASE=postgres
 
-              echo "Waiting for PostgreSQL..."
+              echo "Waiting for PostgreSQL to accept connections..."
               until pg_isready -h $PGHOST; do
-                echo "Waiting..."
-                sleep 2
+                echo "  Not ready, retrying in 5s..."
+                sleep 5
               done
+              echo "PostgreSQL is ready."
 
               echo "Creating role ${APP_DB_USER}..."
               psql -h $PGHOST -d $PGDATABASE -v ON_ERROR_STOP=0 <<EOF
-              CREATE ROLE ${APP_DB_USER} LOGIN PASSWORD '${APP_DB_PASSWORD}' 
+              CREATE ROLE ${APP_DB_USER} LOGIN PASSWORD '${APP_DB_PASSWORD}'
                 NOSUPERUSER NOCREATEDB NOCREATEROLE;
               EOF
 
               echo "Creating database ${APP_DB_NAME}..."
               psql -h $PGHOST -d $PGDATABASE -v ON_ERROR_STOP=0 <<EOF
-              CREATE DATABASE ${APP_DB_NAME} OWNER ${APP_DB_USER} 
+              CREATE DATABASE ${APP_DB_NAME} OWNER ${APP_DB_USER}
                 ENCODING 'UTF8' TEMPLATE template0;
               EOF
 
@@ -85,12 +91,11 @@ spec:
               EOF
 
               echo "Database provisioning complete."
-          
           volumeMounts:
             - name: secrets
               mountPath: /secrets
               readOnly: true
-      
+
       volumes:
         - name: secrets
           emptyDir:
