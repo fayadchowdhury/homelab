@@ -73,6 +73,7 @@
       --repository={{ github_repo }} \
       --branch=master \
       --path={{ flux_cluster_path }} \
+      --components-extra=image-reflector-controller,image-automation-controller \
       --personal
   environment:
     GITHUB_TOKEN: "{{ github_token }}"
