@@ -1,5 +1,3 @@
-harbor_nodeport: 30500
-
 registry_mirrors:
   docker.io:
     upstream: "https://registry-1.docker.io"
@@ -13,3 +11,5 @@ registry_mirrors:
   registry.k8s.io:
     upstream: "https://registry.k8s.io"
     harbor_project: "k8s-registry"
+harbor_hostname: harbor.home.com
+harbor_scheme: https
