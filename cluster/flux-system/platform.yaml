@@ -18,3 +18,20 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
+  healthChecks:  
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: harbor
+      namespace: harbor
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      name: postgres-cluster
+      namespace: cnpg-pods
+    - apiVersion: apps/v1
+      kind: StatefulSet
+      name: minio
+      namespace: minio
+    - apiVersion: apps/v1
+      kind: StatefulSet
+      name: redis
+      namespace: redis
