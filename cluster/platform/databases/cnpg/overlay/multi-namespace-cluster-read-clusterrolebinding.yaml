@@ -4,9 +4,6 @@ metadata:
   name: cnpg-cluster-reader
 subjects:
   - kind: ServiceAccount
-    name: harbor-db-init
-    namespace: harbor
-  - kind: ServiceAccount
     name: airflow-db-init
     namespace: airflow
 roleRef:
