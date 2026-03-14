@@ -7,7 +7,6 @@ metadata:
     recreate: "1"
 spec:
   backoffLimit: 3
-  ttlSecondsAfterFinished: 600
   template:
     spec:
       restartPolicy: OnFailure
