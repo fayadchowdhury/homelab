@@ -5,7 +5,7 @@ metadata:
   namespace: jupyterhub
 spec:
   interval: 30m
-  timeout: 30m
+  timeout: 150m
   chart:
     spec:
       chart: jupyterhub
