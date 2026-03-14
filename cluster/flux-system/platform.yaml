@@ -35,3 +35,7 @@ spec:
       kind: StatefulSet
       name: redis
       namespace: redis
+    - apiVersion: batch/v1
+      kind: Job
+      name: harbor-cache-warmer-job
+      namespace: harbor

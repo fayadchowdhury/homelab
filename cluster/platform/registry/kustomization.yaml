@@ -13,4 +13,5 @@ resources:
 - dockerhub-credentials-secret.yaml
 - create-minio-harbor-bucket.yaml
 - harbor-db-init-job-serviceaccount.yaml
+- harbor-cache-warmer-job.yaml
 - proxy-projects-job.yaml
