@@ -1,0 +1,62 @@
+# harbor.conf
+# Shared config for harbor-project-setup.sh and warm-harbor-cache.sh
+# !! DO NOT COMMIT WITH REAL CREDENTIALS !!
+# Add to .gitignore or encrypt with SOPS/age before committing.
+
+# ── Harbor ────────────────────────────────────────────────────────────────────
+HARBOR_URL="URL_or_IP"
+HARBOR_USER="username"
+HARBOR_PASS="password"
+
+# ── DockerHub (for proxy registry endpoint) ───────────────────────────────────
+DOCKERHUB_USER="username"
+DOCKERHUB_TOKEN="token"
+
+# ── Registry endpoints ────────────────────────────────────────────────────────
+# Format: "NAME URL TYPE [ACCESS_KEY ACCESS_SECRET]"
+# Types: docker-hub, github-ghcr, docker-registry
+REGISTRIES=(
+  "dockerhub    https://registry-1.docker.io  docker-hub      ${DOCKERHUB_USER} ${DOCKERHUB_TOKEN}"
+  "ghcr         https://ghcr.io               github-ghcr"
+  "quay         https://quay.io               docker-registry"
+  "k8s-registry https://registry.k8s.io       docker-registry"
+  ...
+)
+
+# ── Proxy cache projects ──────────────────────────────────────────────────────
+# Format: "PROJECT_NAME REGISTRY_NAME"
+PROXY_PROJECTS=(
+  "dockerhub    dockerhub"
+  "ghcr         ghcr"
+  "quay         quay"
+  "k8s-registry k8s-registry"
+  ...
+)
+
+# ── Plain projects ────────────────────────────────────────────────────────────
+PLAIN_PROJECTS=(
+  "local"
+)
+
+# ── Images to pre-cache ───────────────────────────────────────────────────────
+# Format: REGISTRY/IMAGE:TAG
+# Add images here as you add workloads to the cluster.
+CACHE_IMAGES=(
+  "registry.k8s.io/pause:3.10.1"
+  "docker.io/alpine:3.19"
+  "docker.io/postgres:16-alpine"
+  "docker.io/bitnami/kubectl:latest"
+  "docker.io/curlimages/curl:8.6.0"
+  ...
+)
+
+# ── Project → Harbor project mapping (for warm script) ───────────────────────
+harbor_project_for() {
+  case "$1" in
+    docker.io)        echo "dockerhub" ;;
+    ghcr.io)          echo "ghcr" ;;
+    quay.io)          echo "quay" ;;
+    registry.k8s.io)  echo "k8s-registry" ;;
+    *)                echo ""; return 1 ;;
+  esac
+}

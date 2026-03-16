@@ -11,5 +11,5 @@ registry_mirrors:
   registry.k8s.io:
     upstream: "https://registry.k8s.io"
     harbor_project: "k8s-registry"
-harbor_hostname: harbor.home.com
-harbor_scheme: https
+harbor_hostname: 10.10.10.50
+harbor_scheme: http
