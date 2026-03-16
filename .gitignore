@@ -16,6 +16,9 @@ terraform.tfvars
 inventory.ini
 infra/ansible/group_vars/all/secret.yaml
 
+# Harbor conf
+infra/helpers/harbor.conf
+
 # SOPS + age
 *.agekey
 *.key
