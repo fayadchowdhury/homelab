@@ -8,3 +8,7 @@ resources:
 - backend-deploy.yaml
 - backend-loadbalancer.yaml
 - httproute.yaml
+- db-secret.yaml
+- db-init-job-serviceaccount.yaml
+- db-init-job.yaml
+- redis-restore-job.yaml

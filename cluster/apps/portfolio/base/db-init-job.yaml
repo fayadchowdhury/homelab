@@ -1,0 +1,305 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: portfolio-db-init
+  namespace: portfolio
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      serviceAccountName: portfolio-db-init
+      restartPolicy: OnFailure
+
+      initContainers:
+        - name: fetch-secrets
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Waiting for CNPG cluster to be ready..."
+              until kubectl get cluster postgres-cluster -n cnpg-pods \
+                -o jsonpath='{.status.phase}' 2>/dev/null \
+                | grep -q "Cluster in healthy state"; do
+                echo "  CNPG not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "CNPG cluster is healthy."
+
+              echo "Fetching superuser credentials..."
+              kubectl get secret postgres-cluster-superuser -n cnpg-pods \
+                -o jsonpath='{.data.username}' | base64 -d > /secrets/pg-username
+              kubectl get secret postgres-cluster-superuser -n cnpg-pods \
+                -o jsonpath='{.data.password}' | base64 -d > /secrets/pg-password
+              echo "Credentials fetched."
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+
+      containers:
+        - name: psql
+          image: postgres:16
+          env:
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-db-credentials
+                  key: username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-db-credentials
+                  key: password
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-db-credentials
+                  key: database
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              export PGUSER=$(cat /secrets/pg-username)
+              export PGPASSWORD=$(cat /secrets/pg-password)
+              export PGHOST=postgres-cluster-rw.cnpg-pods.svc
+              export PGDATABASE=postgres
+
+              echo "Waiting for PostgreSQL to accept connections..."
+              until pg_isready -h "$PGHOST"; do
+                echo "  Not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "PostgreSQL is ready."
+
+              # ---- 1. Create role (idempotent) ----------------------------------------
+              echo "Creating role ${APP_DB_USER}..."
+              psql -h "$PGHOST" -v ON_ERROR_STOP=1 <<SQL
+              DO \$\$
+              BEGIN
+                IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${APP_DB_USER}') THEN
+                  CREATE ROLE ${APP_DB_USER} LOGIN PASSWORD '${APP_DB_PASSWORD}'
+                    NOSUPERUSER NOCREATEDB NOCREATEROLE;
+                  RAISE NOTICE 'Role created.';
+                ELSE
+                  RAISE NOTICE 'Role already exists, skipping.';
+                END IF;
+              END \$\$;
+              SQL
+
+              # ---- 2. Create database (idempotent) ------------------------------------
+              echo "Creating database ${APP_DB_NAME}..."
+              psql -h "$PGHOST" -v ON_ERROR_STOP=1 <<SQL
+              SELECT 'CREATE DATABASE ${APP_DB_NAME}
+                OWNER ${APP_DB_USER}
+                ENCODING ''UTF8''
+                TEMPLATE template0'
+              WHERE NOT EXISTS (
+                SELECT FROM pg_database WHERE datname = '${APP_DB_NAME}'
+              )\gexec
+              SQL
+
+              # ---- 3. Schema ownership + DDL + seed data (all inside portfolio DB) ----
+              echo "Applying schema and seeding data into ${APP_DB_NAME}..."
+              psql -h "$PGHOST" -d "${APP_DB_NAME}" -v ON_ERROR_STOP=1 <<'ENDSQL'
+
+              -- Schema ownership (matches backup)
+              ALTER SCHEMA public OWNER TO portfolio;
+              GRANT ALL PRIVILEGES ON SCHEMA public TO portfolio;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public
+                GRANT ALL PRIVILEGES ON TABLES TO portfolio;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public
+                GRANT ALL PRIVILEGES ON SEQUENCES TO portfolio;
+
+              -- -----------------------------------------------------------------------
+              -- Table: projects
+              -- -----------------------------------------------------------------------
+              CREATE TABLE IF NOT EXISTS public.projects (
+                  id                  bigint NOT NULL,
+                  owner               character varying(255),
+                  repo                character varying(255),
+                  description         character varying(255),
+                  languages           character varying[] DEFAULT (ARRAY[]::character varying[])::character varying(255)[],
+                  topics              character varying[] DEFAULT (ARRAY[]::character varying[])::character varying(255)[],
+                  readme              text,
+                  "imageUrl"          text,
+                  "projectCreatedAt"  timestamp with time zone,
+                  "projectUpdatedAt"  timestamp with time zone,
+                  "createdAt"         timestamp with time zone NOT NULL,
+                  "updatedAt"         timestamp with time zone NOT NULL,
+                  CONSTRAINT projects_pkey PRIMARY KEY (id)
+              );
+              ALTER TABLE public.projects OWNER TO postgres;
+
+              -- -----------------------------------------------------------------------
+              -- Table: skills
+              -- -----------------------------------------------------------------------
+              CREATE TABLE IF NOT EXISTS public.skills (
+                  id          uuid DEFAULT gen_random_uuid() NOT NULL,
+                  name        character varying(255),
+                  "iconPath"  character varying(255),
+                  type        character varying(255),
+                  "subType"   character varying(255),
+                  "createdAt" timestamp with time zone NOT NULL,
+                  "updatedAt" timestamp with time zone NOT NULL,
+                  CONSTRAINT skills_pkey PRIMARY KEY (id)
+              );
+              ALTER TABLE public.skills OWNER TO postgres;
+
+              -- -----------------------------------------------------------------------
+              -- Table: testimonials
+              -- -----------------------------------------------------------------------
+              CREATE TABLE IF NOT EXISTS public.testimonials (
+                  id            uuid DEFAULT gen_random_uuid() NOT NULL,
+                  title         character varying(255),
+                  message       character varying(255),
+                  name          character varying(255),
+                  designation   character varying(255),
+                  "imagePath"   character varying(255),
+                  rating        integer,
+                  "createdAt"   timestamp with time zone NOT NULL,
+                  "updatedAt"   timestamp with time zone NOT NULL,
+                  CONSTRAINT testimonials_pkey PRIMARY KEY (id)
+              );
+              ALTER TABLE public.testimonials OWNER TO postgres;
+
+              -- -----------------------------------------------------------------------
+              -- Table: works
+              -- -----------------------------------------------------------------------
+              CREATE TABLE IF NOT EXISTS public.works (
+                  id          uuid DEFAULT gen_random_uuid() NOT NULL,
+                  "order"     integer,
+                  "iconPath"  character varying(255),
+                  title       character varying(255),
+                  subtitle    character varying(255),
+                  period      character varying(255),
+                  description character varying(255),
+                  items       character varying[],
+                  "createdAt" timestamp with time zone NOT NULL,
+                  "updatedAt" timestamp with time zone NOT NULL,
+                  CONSTRAINT works_pkey PRIMARY KEY (id)
+              );
+              ALTER TABLE public.works OWNER TO postgres;
+
+              -- Grant on all existing tables
+              GRANT ALL ON TABLE public.projects    TO portfolio;
+              GRANT ALL ON TABLE public.skills      TO portfolio;
+              GRANT ALL ON TABLE public.testimonials TO portfolio;
+              GRANT ALL ON TABLE public.works       TO portfolio;
+
+              -- -----------------------------------------------------------------------
+              -- Seed data: projects
+              -- -----------------------------------------------------------------------
+              INSERT INTO public.projects (id, owner, repo, description, languages, topics, readme, "imageUrl", "projectCreatedAt", "projectUpdatedAt", "createdAt", "updatedAt") VALUES
+              (177273046,'fayadchowdhury','IUText','IUText repository. Commit to test. If the commit is functional and required, it shall be merged into master.','{C,C++}','{}','',NULL,'2019-03-23 10:05:03+00','2019-03-23 10:05:05+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (858974857,'fayadchowdhury','neural-network-scratch','Trying to create a neural network from scratch because (1) good practice and (2) why not?','{"Jupyter Notebook"}','{}','',NULL,'2024-09-17 21:20:12+00','2024-09-18 17:07:34+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (1084506934,'fayadchowdhury','infoblox-ai-flex',NULL,'{"Jupyter Notebook",Python}','{}','# Infoblox — AI + DDI Take-Home',NULL,'2025-10-27 19:17:36+00','2025-10-28 03:19:03+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (284666583,'fayadchowdhury','RetrofitTest',NULL,'{Kotlin}','{}','',NULL,'2020-08-03 10:07:43+00','2020-09-08 17:13:19+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (1019755991,'fayadchowdhury','spark-jobs','Central repository to hold experimental PySpark jobs','{"Jupyter Notebook",Dockerfile}','{data,docker,python,spark,show}','','https://raw.githubusercontent.com/fayadchowdhury/spark-jobs/master/assets/featured-image.png','2025-07-14 20:26:22+00','2025-09-10 06:40:11+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (576267179,'fayadchowdhury','cherie-api','API for Cherie','{Python,PowerShell,C,CSS,JavaScript,Batchfile,Procfile}','{scripting,web}','','','2022-12-09 12:14:57+00','2025-09-09 23:58:57+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (1040577029,'fayadchowdhury','airflow-dags',NULL,'{Python}','{}','# airflow-dags',NULL,'2025-08-19 07:33:12+00','2025-08-22 06:27:55+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (952160439,'fayadchowdhury','airflow-weather-etl','A project to experiment with ETL pipelines in Apache Airflow using weather data from OpenMeteo','{"Jupyter Notebook",Python}','{airflow,data,show}','','','2025-03-20 20:38:14+00','2025-09-10 06:18:15+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (281036961,'fayadchowdhury','Appointment',NULL,'{Kotlin}','{}','# Appointment',NULL,'2020-07-20 06:47:41+00','2020-09-19 10:11:34+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (250088909,'fayadchowdhury','appointment-backend',NULL,'{JavaScript}','{}','',NULL,'2020-03-25 20:53:07+00','2020-04-20 18:06:59+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (272427678,'fayadchowdhury','appointment-backend-revamp',NULL,'{JavaScript}','{}','',NULL,'2020-06-15 12:04:22+00','2021-01-21 17:05:26+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (296000736,'fayadchowdhury','BattleShip','Repo for BattleShip AR mobile game, mostly made in Unity','{ASP.NET,"C#",ShaderLab}','{}','',NULL,'2020-09-16 10:32:29+00','2020-09-16 10:34:30+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (205596052,'fayadchowdhury','CarryMe-Android','The Android app repository','{Kotlin}','{}','',NULL,'2019-08-31 21:03:41+00','2020-03-24 22:32:11+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (515296580,'fayadchowdhury','node-server-raw','Raw Node.JS server','{JavaScript}','{backend,show,web}','Raw Node.JS server without ExpressJS','','2022-07-18 18:23:52+00','2025-09-10 00:57:48+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (955149546,'fayadchowdhury','personal-portfolio','React, tailwind, three.js, GSAP frontend for portfolio site','{TypeScript,CSS,JavaScript,HTML}','{featured,frontend,web,show}','','https://raw.githubusercontent.com/fayadchowdhury/personal-portfolio/master/assets/featured-image.png','2025-03-26 07:24:45+00','2025-09-12 00:50:09+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (212863025,'fayadchowdhury','AdminPanel','General purpose admin panel for database management WIP','{Java}','{}','',NULL,'2019-10-04 16:55:31+00','2019-10-07 18:06:57+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (992199581,'fayadchowdhury','semantic-book-recommender','Generate book recommendations based on cosine similarities on embeddings','{"Jupyter Notebook",Python}','{data-science,nlp,openai,recommender-system,transformers,data,featured,show}','','https://raw.githubusercontent.com/fayadchowdhury/semantic-book-recommender/master/assets/featured-image.png','2025-05-28 19:18:52+00','2025-09-10 06:39:03+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (177268667,'fayadchowdhury','TripTREK','The actual app repository','{Java}','{}','',NULL,'2019-03-23 09:19:05+00','2019-03-23 09:19:08+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (180014088,'fayadchowdhury','IUTilities',NULL,'{Kotlin}','{}','# IUTilities',NULL,'2019-04-07 19:36:34+00','2019-07-20 18:31:42+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (1046584314,'fayadchowdhury','personal-portfolio-backend','Node, Express, Sequelize monolithic backend for portfolio site','{TypeScript}','{backend,featured,web,show}','','https://raw.githubusercontent.com/fayadchowdhury/personal-portfolio-backend/master/assets/featured-image.png','2025-08-28 22:55:54+00','2025-09-12 00:33:03+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (1055763876,'fayadchowdhury','rags-to-riches','Building a RAG pipeline sourcing knowledge from NLP course materials to build revision guides','{"Jupyter Notebook",HTML,Python,Shell}','{featured,nlp,rag,show}','','https://raw.githubusercontent.com/fayadchowdhury/rags-to-riches/master/assets/featured-image.png','2025-09-12 19:08:27+00','2025-10-09 16:52:59+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (919673671,'fayadchowdhury','real-time-stock-data-analysis','Based on the tutorials by Darshil Parmar, with maybe a few tweaks of my own','{"Jupyter Notebook",Python}','{aws,data,kafka,show,streamlit}','',NULL,'2025-01-20 19:48:21+00','2025-09-10 22:59:11+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (337504660,'fayadchowdhury','noticeboard_api',NULL,'{JavaScript,Dockerfile}','{}','',NULL,'2021-02-09 18:52:44+00','2021-07-25 06:10:28+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (398202645,'fayadchowdhury','PandasNotebooks',NULL,'{"Jupyter Notebook"}','{}','',NULL,'2021-08-20 08:07:36+00','2021-08-23 21:50:15+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (952377336,'fayadchowdhury','pulse-stream','This project explores Azure EventHubs as a data source to be consumed within Databricks and a dashboard set up in PowerBI','{"Jupyter Notebook"}','{azure,data,databricks,show}','','https://raw.githubusercontent.com/fayadchowdhury/pulse-stream/master/assets/featured-image.png','2025-03-21 07:20:37+00','2025-10-08 07:28:06+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (435662486,'fayadchowdhury','solid-principles-java','An explanation of the SOLID principles in Java. Not super detailed, but gets the basic principles across.','{Java}','{show}','','','2021-12-06 22:07:37+00','2025-09-10 00:57:27+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (713850621,'fayadchowdhury','tlc-data-engineering',NULL,'{"Jupyter Notebook"}','{}','This project downloads TLC 2016 Data for NYC...',NULL,'2023-11-03 11:16:29+00','2023-11-03 11:17:07+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (1015866863,'fayadchowdhury','homelab','Central repository for my homelab','{HCL,Python}','{homelab,iac,kubernetes-cluster,vm,featured,show}','','https://raw.githubusercontent.com/fayadchowdhury/homelab/master/assets/featured-image.png','2025-07-08 06:44:18+00','2026-02-06 00:48:17+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00'),
+              (1071110746,'fayadchowdhury','stock-pulse','Combine subreddit and stock data real-time to draw insights, powering everything on Databricks Free Edition','{}','{}','# stock-pulse',NULL,'2025-10-06 22:05:09+00','2025-10-06 22:05:13+00','2025-12-22 08:00:29.869+00','2025-12-22 08:00:29.869+00')
+              ON CONFLICT (id) DO NOTHING;
+
+              -- -----------------------------------------------------------------------
+              -- Seed data: skills
+              -- -----------------------------------------------------------------------
+              INSERT INTO public.skills (id, name, "iconPath", type, "subType", "createdAt", "updatedAt") VALUES
+              ('1c560216-5b2b-42f0-ba7f-3e8475e64324','PySpark','/skill-icons/spark.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('cea935aa-9146-4c1d-b564-01a55bc24242','Pandas','/skill-icons/pandas.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('4feb5c8d-76af-48b8-8c73-411f02e95fb7','PowerBI','/skill-icons/powerbi.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('6643aa3a-07e0-4361-b96e-b39eed18e945','Tableau','/skill-icons/tableau.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('b2cbb3ac-728c-4aec-bc62-d1b539558915','Airflow','/skill-icons/airflow.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('c23e80c0-eb8e-4a44-8402-0bc584fefb93','Kafka','/skill-icons/kafka.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('32b08def-46ff-4a8f-ae5a-a93d69daa466','Looker Studio','/skill-icons/looker.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('d3434b6f-a850-4bb6-96bd-aeddb9f40121','HuggingFace','/skill-icons/huggingface.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('613531cb-b7fc-4d49-8ac3-4e1734b6b468','NumPy','/skill-icons/numpy.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('2f26b65c-2407-4c70-96d4-dfa8aee2c970','Seaborn','/skill-icons/seaborn.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('bc4a51d2-f35c-4d2a-b019-6393019d1017','OpenAI','/skill-icons/openai.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('14eb71e6-82f1-429c-a836-7647f8b882f6','TensorFlow','/skill-icons/tensorflow.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('3dc894e3-8ad6-44a2-9e95-e3095bd3e20a','Docker','/skill-icons/docker.svg','area','DevOps & Infra','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('6876910f-3bf7-4544-8126-12c8be1ea1de','Helm','/skill-icons/helm.svg','area','DevOps & Infra','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('490109fc-9e14-42a0-9acb-a78994320de2','Terraform','/skill-icons/terraform.svg','area','DevOps & Infra','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('dd3e5f6e-dd99-43d4-8caa-4cb299abf939','Github Actions','/skill-icons/github.svg','area','DevOps & Infra','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('40dcf1af-ff03-483a-8838-aeba6276a16e','Kubernetes','/skill-icons/kubernetes.svg','area','DevOps & Infra','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('1fc05dae-3014-4cad-8329-391dd47ae261','Python','/skill-icons/python.svg','core','Language','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('2a5e544c-5e82-4fbc-96a3-5023cd14c2bb','Java','/skill-icons/java.svg','core','Language','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('d71abf61-d58d-44bb-8b7b-07f3f0929fae','JavaScript','/skill-icons/javascript.svg','core','Language','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('ad5bad19-4afc-49a6-884e-a2952e4c6308','TypeScript','/skill-icons/typescript.svg','core','Language','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('af3f3fc6-37b0-4087-8d08-a1a3b47dfea4','HTML','/skill-icons/html.svg','core','Language','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('6cc2e2c9-c7da-4860-a593-eacf67143263','CSS','/skill-icons/css.svg','core','Language','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('1bddbab3-5838-44a5-addd-0448b46a26f6','Express.js','/skill-icons/express.svg','area','Web & Cloud','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('6de581c4-db85-478b-b1b1-88aa6d9acf5c','Tailwind','/skill-icons/tailwind.svg','area','Web & Cloud','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('cd4101b8-5a31-411e-8e04-130d8293259e','AWS','/skill-icons/aws.svg','area','Web & Cloud','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('9a1a3300-f02a-47aa-bec9-bf9df5c31e6f','Bootstrap','/skill-icons/bootstrap.svg','area','Web & Cloud','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('d2df2789-64a8-4171-bca3-2838dd3b950b','React.js','/skill-icons/reactjs.svg','area','Web & Cloud','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('1539cf32-62a7-4616-aa86-81a1b3f24a2a','Node.js','/skill-icons/nodejs.svg','area','Web & Cloud','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('01b776a7-b8ae-47bc-9671-8914d4c095d5','Azure','/skill-icons/azure.svg','area','Web & Cloud','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('a1552dc4-88d5-4444-9a4e-0b7d0e1af29d','GCP','/skill-icons/gcp.svg','area','Web & Cloud','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('6d03cf43-e0cb-442a-9498-d2b865c8bd93','SQL','/skill-icons/sql.svg','core','Language','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00'),
+              ('45eecca0-eeb4-4a1b-9c0e-597ef22e2a98','PyTorch','/skill-icons/pytorch.svg','area','Data & AI','2025-09-11 05:02:00.141+00','2025-09-11 05:02:00.141+00')
+              ON CONFLICT (id) DO NOTHING;
+
+              -- -----------------------------------------------------------------------
+              -- Seed data: testimonials
+              -- -----------------------------------------------------------------------
+              INSERT INTO public.testimonials (id, title, message, name, designation, "imagePath", rating, "createdAt", "updatedAt") VALUES
+              ('b5a5d399-b7f2-4d43-b9e6-f80297654f9c','Excellent Service','I love using this service.','Jane Smith','Owner, DEF Bakery','/testimonial-pics/jane.jpg',4,'2025-09-11 18:40:23+00','2025-09-11 18:40:24+00'),
+              ('f38ec6a7-7bc0-41a0-bcaf-dc65f38b69de','Outstanding Support','The support team was very helpful!','Bob Johnson','CTO, GHI Tech','/testimonial-pics/bob.jpg',5,'2025-09-11 18:41:22+00','2025-09-11 18:41:23+00'),
+              ('0b8b78a3-316e-4b49-bb51-33a94c0b765c','Highly Recommend','Highly recommend to everyone.','Sally Mae','Marketing Director, JKL Digital','/testimonial-pics/sally.jpg',5,'2025-09-11 18:42:16+00','2025-09-11 18:42:17+00'),
+              ('232e6492-3585-42a6-bb71-86c13a9d00e5','Great Product!','This is a fantastic product!','John Doe','CEO, ABC Consulting','/testimonial-pics/john.jpg',5,'2025-09-11 18:38:13+00','2025-09-11 18:38:14+00'),
+              ('0a23d3fa-b0a0-4c38-bd48-d6d2369359e6','Potential to be the crown jewel of any team','Fayad has to be your go-to tech person when you have a problem at hand you don''t know the solution to. He may not have the solution as well, but he will certainly excavate from heaven to hell and find you one.','Shafayat Hossain','Head of Marketing, Rayobyte','https://portfolio-site-static-assets.s3.us-east-1.amazonaws.com/testimonial-photos/shafayat.jpeg',5,'2025-10-06 05:58:37+00','2025-10-06 05:58:40+00')
+              ON CONFLICT (id) DO NOTHING;
+
+              -- -----------------------------------------------------------------------
+              -- Seed data: works
+              -- -----------------------------------------------------------------------
+              INSERT INTO public.works (id, "order", "iconPath", title, subtitle, period, description, items, "createdAt", "updatedAt") VALUES
+              ('0e4633c1-0bc5-4803-b888-afa4d4673e98',1,'/work-icons/sfu.svg','Simon Fraser University','Graduate Teaching Assistant','Jan 2024 - Apr 2025','Supported and mentored nearly 400+ undergraduate and graduate students across three computing science courses, covering the basics of programming to cloud computing and big data systems','{"Assisted 113 students understand Python programming and debugging and encouraged algorithmic thinking and using abstract data structures","Outlined core OOP principles (encapsulation,inheritance,polymorphism) in C++ lab sessions for 235 students","Helped 76 graduate students grasp core big data programming concepts in Apache Spark (mainly PySpark) and general ecosystem (CassandraDB,Kafka,Airflow etc.) in lab sessions","Contributed to clarifying and solidifying understanding of theoretical concepts","going beyond the curriculum to impart interesting knowledge","over online office hours"}','2025-09-11 18:23:29+00','2025-09-11 18:23:30+00'),
+              ('e565ffe5-e50f-47d2-b9d3-da8b535e0c9b',3,'/work-icons/banglalink.svg','Banglalink Digital Communications Ltd.','Data Engineer','Apr 2022 - Aug 2023','Identified and automated high-impact manual insight extraction workflows, enabling data-driven decision-making across the organization','{"Designed and unit-tested an ETL pipeline to scrape Meta Actionable Insights with Selenium","processing data in Pandas and loading into an on-prem MySQL cluster","Enabled 13% business growth by collaborating with marketing to build PowerBI dashboards aggregating 100k+ MySQL records for regional insights","Improved system robustness and scalability by contributing to the MyBL super app migration from PHP to Node.js","implementing microservices with RabbitMQ and Docker"}','2025-09-11 18:25:43+00','2025-09-11 18:25:44+00'),
+              ('2683e932-d7e0-40b3-aacc-68372fdcb452',2,'/work-icons/klue.svg','Klue Labs Inc.','Data Analyst','May 2024 - Aug 2024','Constructed scalable, production-grade data pipelines to support GenAI use cases in technical and non-technical teams and enabled strategic decision-making','{"Saved 4+ hours weekly by developing and unit-testing a modular PDF parsing and embedding pipeline using GCP Cloud Functions and BigQuery for RAG ingestion","Processed 500+ unstructured client content requests by collaborating on unit-tested Python workflows","storing outputs in BigQuery for integration with vendor APIs","Drove refinement rollouts by building a BigQuery-Looker Studio dashboard to visualize the effect of modifying intelligence filters"}','2025-09-11 18:24:39+00','2025-09-11 18:24:40+00')
+              ON CONFLICT (id) DO NOTHING;
+
+              ENDSQL
+
+              echo "All done. Verifying row counts..."
+              psql -h "$PGHOST" -d "${APP_DB_NAME}" -c "
+                SELECT 'projects' AS tbl, COUNT(*) FROM public.projects
+                UNION ALL SELECT 'skills',      COUNT(*) FROM public.skills
+                UNION ALL SELECT 'testimonials', COUNT(*) FROM public.testimonials
+                UNION ALL SELECT 'works',        COUNT(*) FROM public.works;
+              "
+              echo "DB init complete."
+
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+
+      volumes:
+        - name: secrets
+          emptyDir:
+            medium: Memory

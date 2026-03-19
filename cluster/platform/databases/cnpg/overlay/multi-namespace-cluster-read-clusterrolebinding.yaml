@@ -6,6 +6,9 @@ subjects:
   - kind: ServiceAccount
     name: airflow-db-init
     namespace: airflow
+  - kind: ServiceAccount
+    name: portfolio-db-init
+    namespace: portfolio
 roleRef:
   kind: ClusterRole
   name: cnpg-cluster-reader
