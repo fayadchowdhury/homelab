@@ -49,6 +49,7 @@ spec:
         category: backup
         component: redis
         service: redis
+        namespace: monitoring
       annotations:
         summary: "Redis backup is overdue"
         description: "Redis backup in namespace {{ $labels.namespace }} hasn't completed in {{ $value | humanizeDuration }}. Expected daily backups at 2:00 AM UTC. Threshold: 30 hours (24h schedule + 6h grace period)."
@@ -62,6 +63,7 @@ spec:
         category: backup
         component: cnpg
         service: cnpg
+        namespace: monitoring
       annotations:
         summary: "CNPG backup is overdue"
         description: "CNPG backup in namespace {{ $labels.namespace }} hasn't been available in {{ $value | humanizeDuration }}. Expected daily backups at 2:00 AM UTC. Threshold: 30 hours (24h schedule + 6h grace period)."
@@ -79,6 +81,7 @@ spec:
         category: backup
         component: redis
         service: redis
+        namespace: monitoring
       annotations:
         summary: "Redis backup job failed"
         description: "Redis backup job {{ $labels.job_name }} in namespace {{ $labels.namespace }} has failed. Check pod logs for details."
@@ -100,6 +103,7 @@ spec:
         category: backup
         component: redis
         service: redis
+        namespace: monitoring
       annotations:
         summary: "Redis backup completed successfully"
         description: "Redis backup job {{ $labels.job_name }} in namespace {{ $labels.namespace }} completed successfully."
@@ -116,6 +120,7 @@ spec:
         category: backup
         component: cnpg
         service: cnpg
+        namespace: monitoring
       annotations:
         summary: "CNPG has no available backup"
         description: "CNPG cluster in namespace {{ $labels.namespace }} reports no available backup across all pods. This indicates backups have never run successfully, failed validation, or have been deleted. Immediate action required."
@@ -131,6 +136,7 @@ spec:
         category: backup
         component: cnpg
         service: cnpg
+        namespace: monitoring
       annotations:
         summary: "CNPG backup completed successfully"
         description: "CNPG cluster in namespace {{ $labels.namespace }} has a new backup available."
