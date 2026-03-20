@@ -65,3 +65,7 @@ spec:
       kind: Deployment
       name: csi-snapshotter
       namespace: longhorn-system
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: longhorn-driver-deployer
+      namespace: longhorn-system
