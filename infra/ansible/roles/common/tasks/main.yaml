@@ -1,3 +1,11 @@
+- name: Configure apt proxy
+  copy:
+    dest: /etc/apt/apt.conf.d/01proxy
+    content: |
+      Acquire::http::Proxy "http://10.10.10.50:3142";
+      Acquire::https::DIRECT "true";
+    mode: '0644'
+
 - name: Update package repositories
   apt:
     update_cache: yes
