@@ -37,10 +37,9 @@ crane auth login "$HARBOR_HOST" \
 echo ""
 
 # ── Warm images ───────────────────────────────────────────────────────────────
-
 warm_image() {
   local FULL_IMAGE="$1"
-  local REGISTRY IMAGE_PATH PROJECT HARBOR_REF
+  local REGISTRY IMAGE_PATH PROJECT HARBOR_REF TMPFILE
 
   REGISTRY=$(echo "$FULL_IMAGE" | cut -d/ -f1)
   IMAGE_PATH=$(echo "$FULL_IMAGE" | cut -d/ -f2-)
@@ -54,19 +53,30 @@ warm_image() {
   HARBOR_REF="$HARBOR_HOST/$PROJECT/$IMAGE_PATH"
   printf "%-60s" "$FULL_IMAGE"
 
-  # Check if already cached by querying the manifest — fast, no download
-  if crane manifest "$HARBOR_REF" --insecure > /dev/null 2>&1; then
+  # Check if layers are actually stored in Harbor (not just proxied)
+  ARTIFACT_COUNT=$(curl -sf -u "$HARBOR_USER:$HARBOR_PASS" \
+    "$HARBOR_URL/api/v2.0/projects/$PROJECT/repositories" 2>/dev/null | \
+    python3 -c "
+import sys, json
+repos = json.load(sys.stdin)
+name = '$IMAGE_PATH'.split(':')[0]
+match = [r for r in repos if r['name'].endswith(name)]
+print(match[0]['artifact_count'] if match else 0)
+" 2>/dev/null || echo "0")
+
+  if [ "$ARTIFACT_COUNT" -gt 0 ] 2>/dev/null; then
     echo "already cached ✓"
     return 0
   fi
 
-  # Not cached — pull through Harbor to populate the cache
-  echo "pulling..."
-  if crane pull "$HARBOR_REF" --insecure /dev/null 2>/dev/null; then
-    printf "%-60s✓ cached\n" ""
+  # Pull layers through Harbor to populate cache
+  TMPFILE=$(mktemp /tmp/crane-pull-XXXXXX.tar)
+  if crane pull "$HARBOR_REF" "$TMPFILE" --insecure 2>/dev/null; then
+    echo "✓ cached"
   else
-    printf "%-60s✗ failed (will pull on-demand)\n" ""
+    echo "✗ failed (will pull on-demand)"
   fi
+  rm -f "$TMPFILE"
 }
 
 echo "=== Warming cache ==="
