@@ -12,7 +12,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: longhorn-repo
-      version: v1.10.1
+      version: v1.11.11
   interval: 1m0s
   install:
     timeout: 30m
