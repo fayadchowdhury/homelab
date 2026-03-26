@@ -14,6 +14,8 @@ spec:
       labels:
         app: minio
     spec:
+      securityContext:
+        fsGroup: 65532
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -39,10 +41,10 @@ spec:
         - minio
         args:
         - server
-        - http://minio-0.minio-headless.minio.svc.cluster.local/data
-        - http://minio-1.minio-headless.minio.svc.cluster.local/data
-        - http://minio-2.minio-headless.minio.svc.cluster.local/data
-        - http://minio-3.minio-headless.minio.svc.cluster.local/data
+        - http://minio-0.minio-headless.minio.svc.cluster.local:9000/data
+        - http://minio-1.minio-headless.minio.svc.cluster.local:9000/data
+        - http://minio-2.minio-headless.minio.svc.cluster.local:9000/data
+        - http://minio-3.minio-headless.minio.svc.cluster.local:9000/data
         - --console-address
         - ":9001"
         env:
