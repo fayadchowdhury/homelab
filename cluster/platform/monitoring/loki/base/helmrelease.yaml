@@ -19,7 +19,7 @@ spec:
   chart:
     spec:
       chart: loki
-      version: "6.x"             # pin to a specific 6.x when you’re happy
+      version: "8.1.2"
       sourceRef:
         kind: HelmRepository
         name: grafana-loki
