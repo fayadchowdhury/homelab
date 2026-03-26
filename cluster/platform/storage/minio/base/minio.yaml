@@ -33,8 +33,7 @@ spec:
 
       containers:
       - name: minio
-        image: quay.io/minio/minio:RELEASE.2025-10-15T17-29-55Z
-        imagePullPolicy: IfNotPresent
+        image: quay.io/minio/minio:latest
         args:
         - server
         - http://minio-0.minio-headless.minio.svc.cluster.local/data
