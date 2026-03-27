@@ -46,37 +46,38 @@ warm_image() {
   PROJECT=$(harbor_project_for "$REGISTRY" 2>/dev/null || echo "")
 
   if [ -z "$PROJECT" ]; then
-    echo "  SKIP: no proxy project for registry $REGISTRY ($FULL_IMAGE)"
+    printf "%-60s %s\n" "$FULL_IMAGE" "SKIP (no proxy project for $REGISTRY)"
     return 0
   fi
 
   HARBOR_REF="$HARBOR_HOST/$PROJECT/$IMAGE_PATH"
   printf "%-60s" "$FULL_IMAGE"
 
-  # Check if layers are actually stored in Harbor (not just proxied)
-  ARTIFACT_COUNT=$(curl -sf -u "$HARBOR_USER:$HARBOR_PASS" \
-    "$HARBOR_URL/api/v2.0/projects/$PROJECT/repositories" 2>/dev/null | \
-    python3 -c "
-import sys, json
-repos = json.load(sys.stdin)
-name = '$IMAGE_PATH'.split(':')[0]
-match = [r for r in repos if r['name'].endswith(name)]
-print(match[0]['artifact_count'] if match else 0)
-" 2>/dev/null || echo "0")
+  local REPO_NAME="${IMAGE_PATH%:*}"
+  local REPO_ENCODED="${REPO_NAME//\//%252F}"
 
-  if [ "$ARTIFACT_COUNT" -gt 0 ] 2>/dev/null; then
+  # Check if any artifact exists in this repo
+  local COUNT
+  COUNT=$(curl -sf \
+    -u "$HARBOR_USER:$HARBOR_PASS" \
+    "$HARBOR_URL/api/v2.0/projects/$PROJECT/repositories/$REPO_ENCODED/artifacts?page_size=1" \
+    2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)" 2>/dev/null || echo "0")
+
+  if [ "$COUNT" -gt 0 ]; then
     echo "already cached ✓"
     return 0
   fi
 
-  # Pull layers through Harbor to populate cache
-  TMPFILE=$(mktemp /tmp/crane-pull-XXXXXX.tar)
+  # Create temp file and guarantee cleanup on function exit
+  TMPFILE=$(mktemp /tmp/crane-pull-XXXXXX.tar 2>/dev/null || mktemp)
+  trap "rm -f '$TMPFILE'" RETURN
+
+  # Pull through Harbor to trigger upstream fetch and cache
   if crane pull "$HARBOR_REF" "$TMPFILE" --insecure 2>/dev/null; then
     echo "✓ cached"
   else
     echo "✗ failed (will pull on-demand)"
   fi
-  rm -f "$TMPFILE"
 }
 
 echo "=== Warming cache ==="
