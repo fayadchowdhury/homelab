@@ -102,18 +102,18 @@ spec:
         MINIO_ENDPOINT:
           valueFrom:
             secretKeyRef:
-              name: minio-credentials
+              name: rustfs-credentials
               key: ENDPOINT
         MINIO_ACCESS_KEY:
           valueFrom:
             secretKeyRef:
-              name: minio-credentials
-              key: ACCESS_KEY_ID
+              name: rustfs-credentials
+              key: RUSTFS_ACCESS_KEY
         MINIO_SECRET_KEY:
           valueFrom:
             secretKeyRef:
-              name: minio-credentials
-              key: SECRET_ACCESS_KEY
+              name: rustfs-credentials
+              key: RUSTFS_SECRET_KEY
 
       # Lifecycle hooks for cleanup
       lifecycleHooks:

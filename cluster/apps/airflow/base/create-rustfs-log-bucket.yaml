@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: create-minio-logs-bucket
+  name: create-rustfs-logs-bucket
   namespace: airflow
   annotations:
     description: "Ensures the logs bucket exists, creating it if necessary"
@@ -27,15 +27,15 @@ spec:
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
-                      name: minio-credentials
-                      key: ACCESS_KEY_ID
+                      name: rustfs-credentials
+                      key: RUSTFS_ACCESS_KEY
                 - name: AWS_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: minio-credentials
-                      key: SECRET_ACCESS_KEY
+                      name: rustfs-credentials
+                      key: RUSTFS_SECRET_KEY
                 - name: ENDPOINT_URL
-                  value: "http://minio-backend-loadbalancer.minio.svc.cluster.local:9000"
+                  value: "http://rustfs-headless.rustfs.svc.cluster.local:9000"
                 - name: BUCKET_NAME
                   value: "airflow-logs"
               command:

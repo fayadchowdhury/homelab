@@ -54,9 +54,9 @@ spec:
     
     # Reference external connections secret
     secret:
-      - envName: "AIRFLOW_CONN_MINIO"
-        secretName: "airflow-minio-connection"
-        secretKey: "AIRFLOW_CONN_MINIO"
+      - envName: "AIRFLOW_CONN_RUSTFS"
+        secretName: "airflow-rustfs-connection"
+        secretKey: "AIRFLOW_CONN_RUSTFS"
     
     # Remote Logging Configuration (non-sensitive)
     env:
@@ -65,7 +65,7 @@ spec:
       - name: AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER
         value: "s3://airflow-logs"
       - name: AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID
-        value: "minio"
+        value: "rustfs"
     
     createUserJob:
       # Whether the create user job should be created

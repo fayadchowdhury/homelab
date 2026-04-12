@@ -15,7 +15,7 @@ spec:
         max(
           kube_job_status_completion_time{
             namespace="redis",
-            job_name=~"redis-backup-minio.*"
+            job_name=~"redis-backup-rustfs.*"
           }
         ) by (namespace)
     
@@ -73,7 +73,7 @@ spec:
       expr: |
         kube_job_status_failed{
           namespace="redis",
-          job_name=~"redis-backup-minio.*"
+          job_name=~"redis-backup-rustfs.*"
         } > 0
       for: 2m
       labels:
@@ -91,12 +91,12 @@ spec:
       expr: |
         kube_job_status_succeeded{
           namespace="redis",
-          job_name=~"redis-backup-minio.*"
+          job_name=~"redis-backup-rustfs.*"
         } > 0
         and
         changes(kube_job_status_succeeded{
           namespace="redis",
-          job_name=~"redis-backup-minio.*"
+          job_name=~"redis-backup-rustfs.*"
         }[5m]) > 0
       labels:
         severity: info

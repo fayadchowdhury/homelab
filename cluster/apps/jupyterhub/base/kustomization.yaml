@@ -4,7 +4,7 @@ resources:
 - namespace.yaml
 - httproute.yaml
 - httpsroute.yaml
-- minio-credentials-secret.yaml
+- rustfs-credentials-secret.yaml
 - jupyterhub-spark-serviceaccount.yaml
 - helmrepository.yaml
 - helmrelease.yaml

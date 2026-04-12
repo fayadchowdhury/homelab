@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: redis-backup-minio
+  name: redis-backup-rustfs
   namespace: redis
 spec:
   schedule: "0 2 * * *"
@@ -39,10 +39,10 @@ spec:
               
               # Configure MinIO
               echo "Configuring MinIO connection..."
-              mc alias set myminio http://minio-backend-loadbalancer.minio.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+              mc alias set myrustfs http://rustfs-headless.rustfs.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
               
               # Create bucket if it doesn't exist
-              mc mb myminio/redis-backups --ignore-existing
+              mc mb myrustfs/redis-backups --ignore-existing
               
               # Trigger BGSAVE
               echo "Triggering Redis BGSAVE..."
@@ -56,25 +56,25 @@ spec:
               
               # Upload to MinIO
               echo "Uploading to MinIO..."
-              mc cp /tmp/dump-${TIMESTAMP}.rdb myminio/redis-backups/dump-${TIMESTAMP}.rdb
+              mc cp /tmp/dump-${TIMESTAMP}.rdb myrustfs/redis-backups/dump-${TIMESTAMP}.rdb
               
               # Keep only last 30 days
               echo "Cleaning old backups (older than 5 days)..."
-              mc rm --recursive --force --older-than 5d myminio/redis-backups/ || true
+              mc rm --recursive --force --older-than 5d myrustfs/redis-backups/ || true
               
               # List current backups
               echo "Current backups:"
-              mc ls myminio/redis-backups/
+              mc ls myrustfs/redis-backups/
               
               echo "Backup complete!"
             env:
             - name: MINIO_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-credentials
-                  key: ACCESS_KEY_ID
+                  name: rustfs-credentials
+                  key: RUSTFS_ACCESS_KEY
             - name: MINIO_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-credentials
-                  key: SECRET_ACCESS_KEY
+                  name: rustfs-credentials
+                  key: RUSTFS_SECRET_KEY

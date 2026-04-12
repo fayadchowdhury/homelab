@@ -8,5 +8,5 @@ resources:
   - redis-metrics.yaml
   - redis-metrics-service-monitor.yaml
   - cluster-ip.yaml
-  - minio-credentials-secret.yaml
+  - rustfs-credentials-secret.yaml
   - scheduled-backups.yaml
