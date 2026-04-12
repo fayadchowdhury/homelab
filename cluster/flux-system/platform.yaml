@@ -25,8 +25,8 @@ spec:
       namespace: cnpg-pods
     - apiVersion: apps/v1
       kind: StatefulSet
-      name: minio
-      namespace: minio
+      name: rustfs
+      namespace: rustfs
     - apiVersion: apps/v1
       kind: StatefulSet
       name: redis
