@@ -57,6 +57,6 @@ spec:
 
     storageclass:
       name: longhorn-slow-single-replica
-      dataStorageSize: 256Mi
-      logStorageSize: 128Mi
+      dataStorageSize: 35Gi
+      logStorageSize: 256Mi
       secretName: internal-tls-cert
