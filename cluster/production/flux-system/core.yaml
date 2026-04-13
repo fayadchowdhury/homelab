@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 5m
-  path: ./cluster/core
+  path: ./cluster/production/core
   prune: true
   wait: true
   force: true

@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 5m
-  path: ./cluster/gateway
+  path: ./cluster/production/gateway
   prune: true
   wait: true
   timeout: 20m
