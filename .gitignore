@@ -14,10 +14,10 @@ terraform.tfvars
 
 # Ansible inventory
 inventory.ini
-infra/ansible/group_vars/all/secret.yaml
+infra/production/ansible/group_vars/all/secret.yaml
 
 # Harbor conf
-infra/helpers/harbor.conf
+infra/production/helpers/harbor.conf
 
 # SOPS + age
 *.agekey
