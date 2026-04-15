@@ -16,6 +16,9 @@ terraform.tfvars
 inventory.ini
 infra/production/ansible/group_vars/all/secret.yaml
 
+# Staging env file
+infra/staging/.env
+
 # Harbor conf
 infra/production/helpers/harbor.conf
 
