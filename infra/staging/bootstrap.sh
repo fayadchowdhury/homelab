@@ -49,6 +49,7 @@ echo "  ✓ API server is up"
 # --- 3. Install Cilium directly ---
 echo "🔌 Installing Cilium..."
 cilium install \
+  --version "$CILIUM_VERSION" \
   --set kubeProxyReplacement=true \
   --set k8sServiceHost="${CLUSTER_NAME}-control-plane" \
   --set k8sServicePort=6443 \
