@@ -30,14 +30,37 @@ kind create cluster \
   --name "$CLUSTER_NAME" \
   --config "$CLUSTER_CONFIG"
 
-# --- 2. Wait for readiness ---
+# --- 2. Wait for API server
+echo "⏳ Waiting for API server..."
+until kubectl cluster-info &>/dev/null 2>&1; do
+  echo "  retrying..."
+  sleep 3
+done
+echo "  ✓ API server is up"
+
+# --- 3. Install Cilium directly
+echo "🔌 Installing Cilium..."
+cilium install \
+  --set kubeProxyReplacement=true \
+  --set k8sServiceHost="${CLUSTER_NAME}-control-plane" \
+  --set k8sServicePort=6443 \
+  --set hubble.enabled=true \
+  --set hubble.relay.enabled=true \
+  --set hubble.ui.enabled=true
+
+# --- 4. Wait for Cilium
+echo "⏳ Waiting for Cilium to be ready..."
+cilium status --wait
+echo "  ✓ Cilium is up"
+
+# --- 5. Wait for readiness ---
 echo "⏳ Waiting for nodes to be ready..."
 kubectl wait \
   --for=condition=Ready nodes \
   --all \
   --timeout="$KUBECTL_WAIT_TIMEOUT"
 
-# --- 3. Bootstrap Flux ---
+# --- 6. Bootstrap Flux ---
 echo "🔄 Bootstrapping Flux..."
 
 GITHUB_TOKEN="$GITHUB_TOKEN" \
