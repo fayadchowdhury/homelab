@@ -7,7 +7,7 @@ parameters:
   numberOfReplicas: "1"
   staleReplicaTimeout: "30"
   diskSelector: "hdd"
-  dataLocality: "strict-local"
+  dataLocality: "best-effort"
 reclaimPolicy: Retain
 allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
