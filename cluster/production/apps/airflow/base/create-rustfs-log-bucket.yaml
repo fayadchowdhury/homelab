@@ -35,7 +35,7 @@ spec:
                       name: rustfs-credentials
                       key: RUSTFS_SECRET_KEY
                 - name: ENDPOINT_URL
-                  value: "http://rustfs-headless.rustfs.svc.cluster.local:9000"
+                  value: "http://rustfs-svc.rustfs.svc.cluster.local:9000"
                 - name: BUCKET_NAME
                   value: "airflow-logs"
               command:

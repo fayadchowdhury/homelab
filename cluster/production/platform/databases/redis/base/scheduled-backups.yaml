@@ -39,7 +39,7 @@ spec:
               
               # Configure MinIO
               echo "Configuring MinIO connection..."
-              mc alias set myrustfs http://rustfs-headless.rustfs.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+              mc alias set myrustfs http://rustfs-svc.rustfs.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
               
               # Create bucket if it doesn't exist
               mc mb myrustfs/redis-backups --ignore-existing
