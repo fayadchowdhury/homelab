@@ -134,20 +134,3 @@ spec:
       evictionRequested: false
       tags:
       - "hdd"
----
-apiVersion: longhorn.io/v1beta2
-kind: Node
-metadata:
-  name: k8s-worker-9
-  namespace: longhorn-system
-spec:
-  allowScheduling: true
-  evictionRequested: false
-  
-  disks:
-    disk:
-      path: /var/lib/longhorn
-      allowScheduling: true
-      evictionRequested: false
-      tags:
-      - "hdd"
