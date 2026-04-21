@@ -24,7 +24,7 @@ spec:
       name: postgres-cluster
       namespace: cnpg-pods
     - apiVersion: apps/v1
-      kind: StatefulSet
+      kind: Deployment
       name: rustfs
       namespace: rustfs
     - apiVersion: apps/v1
