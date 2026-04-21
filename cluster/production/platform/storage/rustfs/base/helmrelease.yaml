@@ -28,6 +28,12 @@ spec:
       interval: 12h
   
   values:
+    mode:
+      standalone:
+        enabled: true
+      distributed:
+        enabled: false
+
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
@@ -37,9 +43,6 @@ spec:
               operator: In
               values:
               - "true"
-
-      podAntiAffinity:
-        topologyKey: kubernetes.io/hostname
     
     ingress:
       enabled: false
@@ -57,6 +60,6 @@ spec:
 
     storageclass:
       name: longhorn-slow-single-replica
-      dataStorageSize: 35Gi
-      logStorageSize: 256Mi
+      dataStorageSize: 1100Gi
+      logStorageSize: 5Mi
       secretName: internal-tls-cert
