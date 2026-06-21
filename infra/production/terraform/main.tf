@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "proxmox" {
-  pm_api_url            = var.PM_SERVER_URL
+  pm_api_url            = "https://${var.PM_HOST}.${var.PM_DOMAIN}:8006/api2/json"
   pm_api_token_id       = var.PM_API_TOKEN_ID
   pm_api_token_secret   = var.PM_API_TOKEN_SECRET
   pm_debug              = true
@@ -28,7 +28,7 @@ resource "proxmox_vm_qemu" "vms" {
   clone             = each.value.template # Name of prebuilt cloud-init template
   full_clone        = true # Full clone instead of linked clone
   start_at_node_boot= true # Whether to start on boot or not
-  vm_state          = "running" # Desired VM state
+  vm_state          = "stopped" # Desired VM state
   agent             = 1 # To enable QEMU guest agent
   
   cpu { # CPU config
@@ -43,8 +43,9 @@ resource "proxmox_vm_qemu" "vms" {
       scsi0 {
         # SCSI disk from installation
         disk {
-          storage   = each.value.storage_location # Location of disk
-          size      = each.value.storage_size # Size of disk
+          storage   = each.value.intermediate_storage_location # Location of disk
+          # size      = each.value.storage_size # Size of disk
+          size      = "3584M" # Set to size of the cloud-init template disk to avoid resizing issues; will be resized later in the process
         }
       }
       # Optional extra disk (scsi1) for Longhorn PVs
@@ -96,4 +97,24 @@ resource "proxmox_vm_qemu" "vms" {
 
   # Add tags to specify kind of node
   tags              = each.value.tags
+}
+
+resource "null_resource" "move_disk_to_lvmthin" {
+  for_each   = { for index, vm in var.VM_DEFINITIONS : vm.name => vm }
+  depends_on = [proxmox_vm_qemu.vms]
+
+  triggers = {
+    vmid = each.value.vmid
+    size = each.value.final_storage_size
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      ssh -o StrictHostKeyChecking=accept-new root@${each.value.target_node}.${var.PM_DOMAIN} \
+        "qm move-disk ${each.value.vmid} scsi0 ${each.value.final_storage_location} && \
+         qm unlink ${each.value.vmid} --idlist unused0 && \
+         qm resize ${each.value.vmid} scsi0 ${each.value.final_storage_size} && \
+         qm start ${each.value.vmid}"
+    EOT
+  }
 }

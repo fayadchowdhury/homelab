@@ -10,9 +10,14 @@ variable "PM_API_TOKEN_SECRET" {
     sensitive = true
 }
 
-variable "PM_SERVER_URL" {
+variable "PM_HOST" {
     type = string
-    description = "API URL for Proxmox provider"
+    description = "Node hostname for Proxmox"
+}
+
+variable "PM_DOMAIN" {
+    type = string
+    description = "Domain suffix for all Proxmox hosts"
 }
 
 variable "SSH_KEYS_FILE" {
@@ -42,8 +47,9 @@ variable "VM_DEFINITIONS" {
         cpu_cores = number
         cpu_sockets = number
         memory = number
-        storage_location = string
-        storage_size = string
+        intermediate_storage_location = string
+        final_storage_location = string
+        final_storage_size = string
         extra_disk = optional(object({
             storage = string
             size    = string
