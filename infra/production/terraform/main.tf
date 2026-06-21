@@ -2,7 +2,7 @@ terraform {
   required_providers {
     proxmox = {
       source = "Telmate/proxmox"
-      version = "3.0.2-rc03"
+      version = "3.0.2-rc07"
     }
   }
 }
@@ -27,7 +27,7 @@ resource "proxmox_vm_qemu" "vms" {
 
   clone             = each.value.template # Name of prebuilt cloud-init template
   full_clone        = true # Full clone instead of linked clone
-  onboot            = true # Whether to start on boot or not
+  start_at_node_boot= true # Whether to start on boot or not
   vm_state          = "running" # Desired VM state
   agent             = 1 # To enable QEMU guest agent
   
