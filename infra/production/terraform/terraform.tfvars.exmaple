@@ -1,0 +1,24 @@
+PM_API_TOKEN_ID = ""
+PM_API_TOKEN_SECRET = ""
+PM_SERVER_URL = "node-ip:8006/api2/json"
+SSH_KEYS_FILE = "ssh-public-key-file"
+CI_USER = "username"
+CI_PASSWORD = ""
+VM_DEFINITIONS = [
+    {
+        name = "vm-name"
+        target_node = "target-node-hostname"
+        vmid = VM_ID
+        template = "name-of-template-to-clone"
+        cpu_cores = NUM_CPU_CORES
+        cpu_sockets = NUM_CPU_SOCKETS
+        memory = MEMORY_IN_MB
+        storage_location = "target-storage-for-vm-disk"
+        storage_size = "vm-disk-size-in-G"
+        ipv4 = "vm-ip-address-with-cidr"
+        gw = "gateway-ip-address"
+        cloudinit_disk_storage = "storage-location-for-cloudinit-drive"
+        tags = "tags-separated-by-commas"
+    },
+    ...
+]
