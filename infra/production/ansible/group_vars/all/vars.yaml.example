@@ -1,0 +1,7 @@
+registry_mirrors:
+  registry:
+    upstream: "registry_url"
+    harbor_project: "harbor_project_name"
+  ...
+harbor_hostname: harbor.hostname.or.ip
+harbor_scheme: http # or https
