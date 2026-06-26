@@ -11,5 +11,8 @@ registry_mirrors:
   registry.k8s.io:
     upstream: "https://registry.k8s.io"
     harbor_project: "k8s-registry"
-harbor_hostname: 10.10.10.50
+harbor_hostname: 192.168.1.161
 harbor_scheme: http
+apt_cacher_ng_hostname: 192.168.1.161
+apt_cacher_ng_port: 3142
+dns_server_ip: 192.168.1.201

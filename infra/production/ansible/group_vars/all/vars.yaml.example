@@ -5,3 +5,6 @@ registry_mirrors:
   ...
 harbor_hostname: harbor.hostname.or.ip
 harbor_scheme: http # or https
+apt_cacher_ng_hostname: apt-cacher-ng.hostname.or.ip
+apt_cacher_ng_port: port_number # usually 3142
+dns_server_ip: dns_server_ip_address
