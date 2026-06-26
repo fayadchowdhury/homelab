@@ -2,7 +2,7 @@
   copy:
     dest: /etc/apt/apt.conf.d/01proxy
     content: |
-      Acquire::http::Proxy "http://10.10.10.50:3142";
+      Acquire::http::Proxy "http://{{ apt_cacher_ng_hostname }}:{{ apt_cacher_ng_port }}";
       Acquire::https::DIRECT "true";
     mode: '0644'
 
@@ -13,6 +13,17 @@
 - name: Upgrade packages to latest version
   apt:
     upgrade: dist
+
+- name: Install qemu-guest-agent
+  apt:
+    name: qemu-guest-agent
+    state: present
+
+- name: Enable and start QEMU Guest Agent
+  systemd:
+    name: qemu-guest-agent
+    enabled: true
+    state: started
 
 - name: Stop systemd-resolved
   systemd:
@@ -33,7 +44,7 @@
     dest: /etc/resolv.conf
     content: |
       search home.lan
-      nameserver 10.10.10.44
+      nameserver {{ dns_server_ip }}
       nameserver 1.1.1.1
       nameserver 8.8.8.8
     mode: '0644'

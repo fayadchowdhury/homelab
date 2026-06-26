@@ -10,12 +10,23 @@
       group_vars/all/secret.yml.
     success_msg: "Docker Hub credentials verified."
 
-- name: Ensure harbor.home.com resolves to Traefik LB on every node
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    regexp: 'harbor\.home\.com'
-    line: "10.10.10.101 harbor.home.com"
-    state: present
+- name: Install Harbor CA certificate into system trust store
+  ansible.builtin.copy:
+    src: certificates/harbor.crt
+    dest: /usr/local/share/ca-certificates/harbor.crt
+    mode: '0644'
+
+- name: Verify Harbor CA certificate is in system trust store
+  ansible.builtin.assert:
+    that:
+      - "'harbor.crt' in certs.stdout"
+    fail_msg: "Harbor CA certificate not found in system trust store."
+    success_msg: "Harbor CA certificate is present in system trust store."
+
+- name: Update system trust store
+  ansible.builtin.command: update-ca-certificates
+  register: certs
+  changed_when: "'0 added' not in update_ca.stdout"
 
 - name: Create containerd certs.d base directory
   ansible.builtin.file:
@@ -88,6 +99,7 @@
     old_dropin.changed or
     mirrors_dropin.changed or
     imports_line.changed
+    certs.changed
 
 - name: Wait for containerd to stabilise
   ansible.builtin.pause:
