@@ -38,7 +38,7 @@ spec:
             metadata:
               name: "cnpg-rw-lb"
               annotations:
-                metallb.universe.tf/loadBalancerIPs: 10.10.10.110
+                metallb.universe.tf/loadBalancerIPs: 192.168.1.111
             spec:
               ports:
                 - name: postgresql
