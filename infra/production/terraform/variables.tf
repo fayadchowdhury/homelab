@@ -47,9 +47,8 @@ variable "VM_DEFINITIONS" {
         cpu_cores = number
         cpu_sockets = number
         memory = number
-        intermediate_storage_location = string
-        final_storage_location = string
-        final_storage_size = string
+        storage_location = string
+        storage_size = string
         extra_disk = optional(object({
             storage = string
             size    = string
