@@ -19,7 +19,7 @@
 - name: Update system trust store
   ansible.builtin.command: update-ca-certificates
   register: certs
-  changed_when: "'0 added' not in update_ca.stdout"
+  changed_when: "'0 added' not in certs.stdout"
 
 - name: Create containerd certs.d base directory
   ansible.builtin.file:
@@ -91,7 +91,7 @@
     hosts_toml.changed or
     old_dropin.changed or
     mirrors_dropin.changed or
-    imports_line.changed
+    imports_line.changed or
     certs.changed
 
 - name: Wait for containerd to stabilise
