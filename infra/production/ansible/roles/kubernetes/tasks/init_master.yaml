@@ -33,7 +33,7 @@
     mode: '0644'
 
 - name: Install Flannel CNI
-  command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  command: kubectl apply -f https://github.com/flannel-io/flannel/releases/download/v0.28.4/kube-flannel.yml
 
 - name: Get kubeadm join command
   shell: kubeadm token create --print-join-command
