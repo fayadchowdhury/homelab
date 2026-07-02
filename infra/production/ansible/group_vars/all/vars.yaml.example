@@ -8,3 +8,4 @@ harbor_scheme: http # or https
 apt_cacher_ng_hostname: apt-cacher-ng.hostname.or.ip
 apt_cacher_ng_port: port_number # usually 3142
 dns_server_ip: dns_server_ip_address
+kubeconfig_out: "kubeconfig_output_path"

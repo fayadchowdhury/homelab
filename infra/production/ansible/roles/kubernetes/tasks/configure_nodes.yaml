@@ -12,6 +12,8 @@
       monitor: "{{ groups['monitor'] }}"
       store: "{{ groups['store'] }}"
       db: "{{ groups['db'] }}"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
 - name: Taint control-plane nodes (NoSchedule)
   command: >
@@ -23,6 +25,8 @@
     label: "{{ item }} -> control-plane NoSchedule"
   register: control_taint
   changed_when: "'tainted' in control_taint.stdout or 'updated' in control_taint.stdout"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
 
 # - name: Apply taints to specialized nodes
@@ -66,6 +70,8 @@
     kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
   register: node_config
   changed_when: false
+  environment:
+    KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
 - name: Display node configuration
   debug:

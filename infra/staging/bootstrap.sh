@@ -20,6 +20,7 @@ fi
 : "${CLUSTER_NAME:?CLUSTER_NAME is required}"
 : "${CLUSTER_CONFIG:?CLUSTER_CONFIG is required}"
 : "${AGE_KEY:?AGE_KEY is required}"
+: "${KUBECONFIG_OUT:=~/.kube/config-staging}"
 
 # --- Optional defaults ---
 KUBECTL_WAIT_TIMEOUT="${KUBECTL_WAIT_TIMEOUT:-120s}"
@@ -36,7 +37,17 @@ done
 echo "🚀 Creating kind cluster: $CLUSTER_NAME"
 kind create cluster \
   --name "$CLUSTER_NAME" \
-  --config "$CLUSTER_CONFIG"
+  --config "$CLUSTER_CONFIG" \
+  --kubeconfig "$KUBECONFIG_OUT"
+
+# Rename context to unambiguous name
+kubectl config rename-context \
+  kind-staging staging \
+  --kubeconfig $KUBECONFIG_OUT
+
+export KUBECONFIG="$KUBECONFIG_OUT"
+
+echo "Staging kubeconfig written to $KUBECONFIG_OUT"
 
 # --- 2. Wait for API server ---
 echo "⏳ Waiting for API server..."

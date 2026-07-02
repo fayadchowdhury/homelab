@@ -46,5 +46,5 @@
 - name: Download kubeconfig to local machine
   fetch:
     src: "{{ ansible_env.HOME }}/.kube/config"
-    dest: "~/.kube/config"
+    dest: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
     flat: yes

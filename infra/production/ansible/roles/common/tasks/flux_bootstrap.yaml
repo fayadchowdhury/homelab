@@ -33,6 +33,8 @@
       --timeout=300s
   register: nodes_ready
   changed_when: false
+  environment:
+    KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
 - name: Show node ready status
   ansible.builtin.debug:
@@ -43,6 +45,8 @@
     kubectl create namespace flux-system \
       --dry-run=client -o yaml | kubectl apply -f -
   changed_when: false
+  environment:
+    KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
 - name: Write age key to temporary file on master
   ansible.builtin.copy:
@@ -59,6 +63,8 @@
       --dry-run=client -o yaml | kubectl apply -f -
   no_log: true
   changed_when: false
+  environment:
+    KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
 - name: Remove temporary age key file
   ansible.builtin.file:
@@ -77,6 +83,7 @@
       --personal
   environment:
     GITHUB_TOKEN: "{{ github_token }}"
+    KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
   register: flux_bootstrap_result
   changed_when: "'already up to date' not in flux_bootstrap_result.stdout"
 
