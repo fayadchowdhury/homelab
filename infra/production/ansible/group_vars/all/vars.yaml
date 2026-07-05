@@ -11,8 +11,8 @@ registry_mirrors:
   registry.k8s.io:
     upstream: "https://registry.k8s.io"
     harbor_project: "k8s-registry"
-harbor_hostname: 192.168.1.162
-harbor_scheme: http
+harbor_hostname: cacher.home.com
+harbor_scheme: https
 apt_cacher_ng_hostname: 192.168.1.162
 apt_cacher_ng_port: 3142
 dns_server_ip: 192.168.1.201
