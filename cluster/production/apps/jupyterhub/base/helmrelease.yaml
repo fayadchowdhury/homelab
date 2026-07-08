@@ -29,7 +29,7 @@ spec:
             false
     hub:
       nodeSelector:
-        role/store: "true"
+        role/compute: "true"
       db:
         type: sqlite-pvc
         pvc:
@@ -134,7 +134,7 @@ spec:
         type: ClusterIP
       chp:
         nodeSelector:
-          role/store: "true"
+          role/compute: "true"
         resources:
           requests:
             cpu: 100m
