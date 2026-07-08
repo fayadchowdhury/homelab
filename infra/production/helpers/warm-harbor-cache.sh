@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 # warm-harbor-cache.sh
-# Warms the Harbor proxy cache by pulling images through Harbor to /dev/null.
-# Skips images already present in Harbor (checks manifest before pulling).
-# All configuration and image list read from harbor.conf.
+# Warms the Harbor proxy cache by pulling images through Harbor.
+# Tracks warmed digests in a local state file (harbor.cache-state) so
+# re-runs skip already-cached images without any Harbor API check.
+#
+# Harbor's proxy API always returns 200 (transparent upstream proxy) regardless
+# of local cache state, so API-based checks are unreliable. The state file is
+# the only trustworthy signal. Delete it (or run wipe-harbor-projects.sh) to
+# force a full re-warm.
 #
 # Usage:
 #   bash warm-harbor-cache.sh
@@ -26,6 +31,9 @@ fi
 
 HARBOR_HOST="${HARBOR_URL#http://}"
 HARBOR_HOST="${HARBOR_HOST#https://}"
+
+STATE_FILE="$(dirname "$CONF")/harbor.cache-state"
+touch "$STATE_FILE"
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -53,17 +61,9 @@ warm_image() {
   HARBOR_REF="$HARBOR_HOST/$PROJECT/$IMAGE_PATH"
   printf "%-60s" "$FULL_IMAGE"
 
-  local REPO_NAME="${IMAGE_PATH%:*}"
-  local REPO_ENCODED="${REPO_NAME//\//%252F}"
-
-  # Check if any artifact exists in this repo
-  local COUNT
-  COUNT=$(curl -sf \
-    -u "$HARBOR_USER:$HARBOR_PASS" \
-    "$HARBOR_URL/api/v2.0/projects/$PROJECT/repositories/$REPO_ENCODED/artifacts?page_size=1" \
-    2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)" 2>/dev/null || echo "0")
-
-  if [ "$COUNT" -gt 0 ]; then
+  # State file is the only reliable cache signal — Harbor's proxy API always
+  # returns 200 regardless of whether blobs are locally stored.
+  if grep -qxF "$FULL_IMAGE" "$STATE_FILE" 2>/dev/null; then
     echo "already cached ✓"
     return 0
   fi
@@ -72,8 +72,9 @@ warm_image() {
   TMPFILE=$(mktemp /tmp/crane-pull-XXXXXX.tar 2>/dev/null || mktemp)
   trap "rm -f '$TMPFILE'" RETURN
 
-  # Pull through Harbor to trigger upstream fetch and cache
+  # Pull through Harbor to trigger upstream fetch and cache blobs locally
   if crane pull "$HARBOR_REF" "$TMPFILE" --insecure 2>/dev/null; then
+    echo "$FULL_IMAGE" >> "$STATE_FILE"
     echo "✓ cached"
   else
     echo "✗ failed (will pull on-demand)"

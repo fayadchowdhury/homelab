@@ -39,15 +39,91 @@ PLAIN_PROJECTS=(
 )
 
 # ── Images to pre-cache ───────────────────────────────────────────────────────
-# Format: REGISTRY/IMAGE:TAG
+# Format: REGISTRY/IMAGE@DIGEST
 # Add images here as you add workloads to the cluster.
 CACHE_IMAGES=(
-  "registry.k8s.io/pause:3.10.1"
-  "docker.io/alpine:3.19"
-  "docker.io/postgres:16-alpine"
-  "docker.io/bitnami/kubectl:latest"
-  "docker.io/curlimages/curl:8.6.0"
-  ...
+  # docker.io → dockerhub
+  "docker.io/amazon/aws-cli@sha256:a0c252c1822e1e484dcb4025ac4a6f765007b7b4ea57db1f09ada597e093df5c"
+  "docker.io/apache/airflow@sha256:740da888bf8367e75e6db8c8cd62c4d7b4e6744cdf0e9b53bf4467458f8dadab"
+  "docker.io/bitnami/kubectl@sha256:a67b11e95e953f550f020a41970185ccc5f83d78b86b8c575d02c904aa0f9cd7"
+  "docker.io/cloudflare/cloudflared@sha256:6b599ca3e974349ead3286d178da61d291961182ec3fe9c505e1dd02c8ac31b0"
+  "docker.io/grafana/alloy@sha256:f50931848bd8178774521767bb46b905e1a081301950ff28d7623c9db7c01076"
+  "docker.io/grafana/grafana@sha256:83749231c3835e390a3144e5e940203e42b9589761f20ef3169c716e734ad505"
+  "docker.io/grafana/loki-canary@sha256:0dac7d5cb383adb8d3723676a70ed0c65b582e636846f4ce48703556dd509ad1"
+  "docker.io/grafana/loki@sha256:3c8fd3570dd9219951a60d3f919c7f31923d10baee578b77bc26c4a0b32d092d"
+  "docker.io/grafana/tempo@sha256:9371af1b75b4e057eb77f22dc4dd4d9176cd6985e29f181527be6723b7f29c41"
+  "docker.io/kiwigrid/k8s-sidecar@sha256:a6b3f707f883108376514489a94d6629109a327b2978e1d826cd104c4ca436df"
+  "docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
+  "docker.io/library/busybox@sha256:9532d8c39891ca2ecde4d30d7710e01fb739c87a8b9299685c63704296b16028"
+  "docker.io/library/postgres@sha256:fe03a7605299a34ddf5e4f285dff78c3d7190a576b3c6b46f2fcff69f4bffd54"
+  "docker.io/library/redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+  "docker.io/library/traefik@sha256:9004e1cd1e33c5eb0b6ec02bc6cfda61fe9caca36751114b1c9c6662f01b264a"
+  "docker.io/longhornio/csi-attacher@sha256:f60ab9e4da75592299ece72b35ad68f4b932f183f28ea4e4042d22dca38b3ea5"
+  "docker.io/longhornio/csi-node-driver-registrar@sha256:f3da8da8dfbb91ea43bdd4c44a7dd205f08153572fc5288a9a4a19c6daeaa69d"
+  "docker.io/longhornio/csi-provisioner@sha256:8486bfd58e93681e0a8fea6b7270958b45034646ce7cb94f91da5e74c72931d0"
+  "docker.io/longhornio/csi-resizer@sha256:637ca89f08d1d39452cde190a05b91cf1cb7c2d56fd726624e4fd9149154a810"
+  "docker.io/longhornio/csi-snapshotter@sha256:223eaae797c6bc29a74182b53c166be9f42bce037d113404572c8f1d90e284a0"
+  "docker.io/longhornio/livenessprobe@sha256:94964ab1fe4d62f14e6df321043eb19d03154a1fa4d4bb1a1ae796627790e6eb"
+  "docker.io/longhornio/longhorn-engine@sha256:5ec00ddbc8f66911b2c8154f2c7ebf15342b4ee4508d6d2f5435aec2537e596f"
+  "docker.io/longhornio/longhorn-instance-manager@sha256:3ba59894a878a73273fd18cd85294e718f0c4d95981ef88b3ed71436ed1a06ac"
+  "docker.io/longhornio/longhorn-manager@sha256:a4c0870e2b1d9aad9d7233a87ae13b962d807be803fd027e0b642753a80af122"
+  "docker.io/longhornio/longhorn-share-manager@sha256:8536e403137b50b60ed0cb3268de225c26cbbe7e1fdb9e01080d3db34c7ce4c0"
+  "docker.io/longhornio/longhorn-ui@sha256:9008cce5be4752f7fcef2d0e008076ba5c0c8a6df8f57fb6ab0285b0f49634ab"
+  "docker.io/nginxinc/nginx-unprivileged@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6"
+  "docker.io/oliver006/redis_exporter@sha256:6a97d4dd743b533e1f950c677b87d880e44df363c61af3f406fc9e53ed65ee03"
+  "docker.io/redis/redis-stack-server@sha256:798ab84d9f266936b034ab11c4d04a2b8e4b441884c5aa7d17ac951eefdf742a"
+  "docker.io/rustfs/rustfs@sha256:f1b59053332cdaa00c6a0d08b43f02fb2d12bf2749098b6d9d5eed693b39b695"
+
+  # docker.io/fayadchowdhury → dockerhub (user's own public images)
+  "docker.io/fayadchowdhury/data-jupyter-image@sha256:0fb7baf724ed82ff335c577b5c3f1ae9cf8ce33b885f5bd9c50d8194085afc86"
+  "docker.io/fayadchowdhury/bundled-spark-image@sha256:b3dce3e82aa83c089b8fa972dacd77bdea67c08eeaf4e2ac415e57cb7fbb252f"
+  "docker.io/fayadchowdhury/portfolio-backend@sha256:bfd37c04ee2aa77a551fdea0d88178a1f2591ef5614cf0e8ec6f9f7309cb4885"
+  "docker.io/fayadchowdhury/portfolio-frontend@sha256:2bc84f5a510b085ee6a93adc3a4c0abe33bf9ef9a841f8b71fb0c61d650bd842"
+
+  # ghcr.io → ghcr
+  "ghcr.io/cloudnative-pg/cloudnative-pg@sha256:0edcdaefaa83d68822158cf4370d83d185c54db2b6beb7e0848aca16eafa6344"
+  "ghcr.io/cloudnative-pg/plugin-barman-cloud-sidecar@sha256:8e45fedbfaae916d7dff1160ea22648c2d21e6184479d3eb75e9ff0f3b23428a"
+  "ghcr.io/cloudnative-pg/plugin-barman-cloud@sha256:c2788d1560118926302a21159b4b0452fc133df1a3f957c1b2ed6b41834ee571"
+  "ghcr.io/cloudnative-pg/postgresql@sha256:e6d28874a9d92c654ab2873614e566e596b407e639c977eabb69b290bbffa7f3"
+  "ghcr.io/flannel-io/flannel-cni-plugin@sha256:7c3377e977b4b77b8efdad96e207ebee371537d6dcd7b9c40853cf0c0f0aade3"
+  "ghcr.io/flannel-io/flannel@sha256:cc44a1a8969c4f14b8dd45664546f14abc3fc7682b125399103e555f1ad2528b"
+  "ghcr.io/fluxcd/helm-controller@sha256:b4b8f7715cc7cb61382eeb82bea108d1bdd965b00e7192c5dc9ab7436a33658b"
+  "ghcr.io/fluxcd/image-automation-controller@sha256:a888b32b1e0f4fd754bc1db606741503300d3efb060e82b9c28d3852f1008049"
+  "ghcr.io/fluxcd/image-reflector-controller@sha256:45b219b1baddedcc0d6cd09da77c57d235bd225652eafb168981fb78cede640d"
+  "ghcr.io/fluxcd/kustomize-controller@sha256:70e2a25edeee82690e68662409fb1b60f7d3084c93435e8ab5337a6e0244ffed"
+  "ghcr.io/fluxcd/notification-controller@sha256:75842ecfcca4397a788051d6b00ec34f96ea74788c92d9c360fc4d196ea04551"
+  "ghcr.io/fluxcd/source-controller@sha256:65172e2405cf95b92c4b00cefd28d5e8ffd1f81d6d097f85c6e83a9c557c9def"
+  "ghcr.io/kubeflow/spark-operator/controller@sha256:82b6f8df1986b865bd33272ba76605b7beaa012d430e3d32b1b2aac420f03137"
+
+  # quay.io → quay
+  "quay.io/jetstack/cert-manager-cainjector@sha256:6a620381d99583d886e8ce745c872f638bcfc854964ad95d657eec2048a6dca1"
+  "quay.io/jetstack/cert-manager-controller@sha256:b9009aa6b45b59da1363a26dab15aee7d77c7ce01ac2c1cf05ecd1121462db16"
+  "quay.io/jetstack/cert-manager-webhook@sha256:2133daae1f08ad54bcfd317f4a19b48e2bba1c490dbf04e74c4666b3d5d6a69b"
+  "quay.io/jupyterhub/configurable-http-proxy@sha256:eb10d5bf045c16b26bd9107a080a50a97fe9658c28f8c2226c661669ba725adc"
+  "quay.io/jupyterhub/k8s-hub@sha256:6cfc248e55a72edd2354d0ce408031de9b4db7cf36814d84eadead15f5128627"
+  "quay.io/jupyterhub/k8s-network-tools@sha256:869a55b75470f7c5a32d28074abf2caa5a80ed6986c474bc5638fb5de4dd3310"
+  "quay.io/kiwigrid/k8s-sidecar@sha256:a6b3f707f883108376514489a94d6629109a327b2978e1d826cd104c4ca436df"
+  "quay.io/metallb/controller@sha256:6698ccc54c380913816ed1fd0758637ec87dd79da419c4ab170a2c26c158ab89"
+  "quay.io/metallb/speaker@sha256:c6a5b25b2e1fba610a57b2db4bb8141d7c133569d561a8cc29e38ca5113efbc4"
+  "quay.io/prometheus-operator/prometheus-config-reloader@sha256:959d47672fbff2776a04ec62b8afcec89e8c036af84dc5fade50019dab212746"
+  "quay.io/prometheus-operator/prometheus-config-reloader@sha256:cb4ac6a56555bef0e202bec11e367dfe07ffb241cf4d30566b12b864692607a8"
+  "quay.io/prometheus-operator/prometheus-operator@sha256:fea93ca9be807eee2f51f4d997b7a2bf073d4051d9012b45b3c84a7b9e8b3f25"
+  "quay.io/prometheus/alertmanager@sha256:88b605de9aba0410775c1eb3438f951115054e0d307f23f274a4c705f51630c1"
+  "quay.io/prometheus/node-exporter@sha256:337ff1d356b68d39cef853e8c6345de11ce7556bb34cda8bd205bcf2ed30b565"
+  "quay.io/prometheus/prometheus@sha256:7571a304e67fbd794be02422b13627dc7de822152f74e99e2bef95d29eceecde"
+  "quay.io/prometheus/statsd-exporter@sha256:632f705804922d50c1c95ba8ff9c8c0cc18d4bbb0cc265dc4f9ae708271c95b3"
+
+  # registry.k8s.io → k8s-registry
+  "registry.k8s.io/coredns/coredns@sha256:40384aa1f5ea6bfdc77997d243aec73da05f27aed0c5e9d65bfa98933c519d97"
+  "registry.k8s.io/etcd@sha256:251e7e490f64859d329cd963bc879dc04acf3d7195bb52c4c50b4a07bedf37d6"
+  "registry.k8s.io/git-sync/git-sync@sha256:3089d9787b89bdc5af01d9f6e8d515aefb9672e8aea3972d7ff67478112bacb3"
+  "registry.k8s.io/kube-apiserver@sha256:576c504089365f4540dce71901ecd49a6802a1fb1f59e42d5e96b422a80b5beb"
+  "registry.k8s.io/kube-controller-manager@sha256:fad93ee836fd44975c3d4d2e13356955584a2e8e88b8ecff014191fab2649266"
+  "registry.k8s.io/kube-proxy@sha256:dc4788df776179d96e5a106ad64cf6aa1086108a0323950d68a27f9bfaca9bce"
+  "registry.k8s.io/kube-scheduler@sha256:ccb3926e60fb6ad34abe2434aebdc3394adc9aa9fa1d4f288bdff54ebb5d741d"
+  "registry.k8s.io/kube-state-metrics/kube-state-metrics@sha256:1545919b72e3ae035454fc054131e8d0f14b42ef6fc5b2ad5c751cafa6b2130e"
+  "registry.k8s.io/metrics-server/metrics-server@sha256:b2d2efaf5ac3b366ed0f839d2412a2c4279d4fc2a2a733f12c52133faed36c41"
+  "registry.k8s.io/pause@sha256:278fb9dbcca9518083ad1e11276933a2e96f23de604a3a08cc3c80002767d24c"
 )
 
 # ── Project → Harbor project mapping (for warm script) ───────────────────────
@@ -57,6 +133,7 @@ harbor_project_for() {
     ghcr.io)          echo "ghcr" ;;
     quay.io)          echo "quay" ;;
     registry.k8s.io)  echo "k8s-registry" ;;
+    cgr.dev)          echo "cgr" ;;
     *)                echo ""; return 1 ;;
   esac
 }

@@ -39,6 +39,12 @@ if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
   exit 0
 fi
 
+STATE_FILE="$(dirname "$CONF")/harbor.cache-state"
+if [ -f "$STATE_FILE" ]; then
+  rm -f "$STATE_FILE"
+  echo "Cleared warm cache state file: $STATE_FILE"
+fi
+
 while IFS= read -r PROJECT; do
   [ -z "$PROJECT" ] && continue
   echo ""
