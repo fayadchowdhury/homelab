@@ -70,6 +70,10 @@
       [plugins."io.containerd.cri.v1.images".registry.configs."registry-1.docker.io".auth]
         username = "{{ dockerhub_username }}"
         password = "{{ dockerhub_token }}"
+      
+      [plugins."io.containerd.cri.v1.images".registry.configs."cacher.home.com".auth]
+        username = "{{ harbor_admin_username }}"
+        password = "{{ harbor_admin_password }}"
     mode: '0600'
   no_log: true
   register: mirrors_dropin
