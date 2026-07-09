@@ -9,15 +9,15 @@ spec:
     spec:
       serviceAccountName: portfolio-db-init
       restartPolicy: OnFailure
-
-      initContainers:
-        - name: fetch-secrets
+      containers:
+        - name: db-init
           image: bitnami/kubectl:latest
           command:
             - /bin/sh
             - -c
             - |
               set -e
+
               echo "Waiting for CNPG cluster to be ready..."
               until kubectl get cluster postgres-cluster -n cnpg-pods \
                 -o jsonpath='{.status.phase}' 2>/dev/null \
@@ -27,48 +27,17 @@ spec:
               done
               echo "CNPG cluster is healthy."
 
-              echo "Fetching superuser credentials..."
-              kubectl get secret postgres-cluster-superuser -n cnpg-pods \
-                -o jsonpath='{.data.username}' | base64 -d > /secrets/pg-username
-              kubectl get secret postgres-cluster-superuser -n cnpg-pods \
-                -o jsonpath='{.data.password}' | base64 -d > /secrets/pg-password
-              echo "Credentials fetched."
-          volumeMounts:
-            - name: secrets
-              mountPath: /secrets
+              PG_USER=$(kubectl get secret postgres-cluster-superuser -n cnpg-pods \
+                -o jsonpath='{.data.username}' | base64 -d)
+              PG_PASS=$(kubectl get secret postgres-cluster-superuser -n cnpg-pods \
+                -o jsonpath='{.data.password}' | base64 -d)
 
-      containers:
-        - name: psql
-          image: postgres:16
-          env:
-            - name: APP_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-db-credentials
-                  key: username
-            - name: APP_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-db-credentials
-                  key: password
-            - name: APP_DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-db-credentials
-                  key: database
-          command:
-            - /bin/bash
-            - -c
-            - |
-              set -e
+              PRIMARY=$(kubectl get pods -n cnpg-pods -l cnpg.io/instanceRole=primary \
+                -o jsonpath='{.items[0].metadata.name}')
+              echo "Primary pod: $PRIMARY"
 
-              export PGUSER=$(cat /secrets/pg-username)
-              export PGPASSWORD=$(cat /secrets/pg-password)
-              export PGHOST=postgres-cluster-rw.cnpg-pods.svc
-              export PGDATABASE=postgres
-
-              echo "Waiting for PostgreSQL to accept connections..."
-              until pg_isready -h "$PGHOST"; do
+              until kubectl exec -n cnpg-pods "$PRIMARY" -c postgres -- \
+                pg_isready -U "$PG_USER" 2>/dev/null; do
                 echo "  Not ready, retrying in 5s..."
                 sleep 5
               done
@@ -76,7 +45,8 @@ spec:
 
               # ---- 1. Create role (idempotent) ----------------------------------------
               echo "Creating role ${APP_DB_USER}..."
-              psql -h "$PGHOST" -v ON_ERROR_STOP=1 <<SQL
+              kubectl exec -n cnpg-pods "$PRIMARY" -c postgres -i -- \
+                env PGPASSWORD="$PG_PASS" psql -U "$PG_USER" -v ON_ERROR_STOP=1 << EOF
               DO \$\$
               BEGIN
                 IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${APP_DB_USER}') THEN
@@ -87,11 +57,12 @@ spec:
                   RAISE NOTICE 'Role already exists, skipping.';
                 END IF;
               END \$\$;
-              SQL
+              EOF
 
               # ---- 2. Create database (idempotent) ------------------------------------
               echo "Creating database ${APP_DB_NAME}..."
-              psql -h "$PGHOST" -v ON_ERROR_STOP=1 <<SQL
+              kubectl exec -n cnpg-pods "$PRIMARY" -c postgres -i -- \
+                env PGPASSWORD="$PG_PASS" psql -U "$PG_USER" -v ON_ERROR_STOP=1 << EOF
               SELECT 'CREATE DATABASE ${APP_DB_NAME}
                 OWNER ${APP_DB_USER}
                 ENCODING ''UTF8''
@@ -99,11 +70,12 @@ spec:
               WHERE NOT EXISTS (
                 SELECT FROM pg_database WHERE datname = '${APP_DB_NAME}'
               )\gexec
-              SQL
+              EOF
 
-              # ---- 3. Schema ownership + DDL + seed data (all inside portfolio DB) ----
+              # ---- 3. Schema ownership + DDL + seed data (static, no shell vars) ------
               echo "Applying schema and seeding data into ${APP_DB_NAME}..."
-              psql -h "$PGHOST" -d "${APP_DB_NAME}" -v ON_ERROR_STOP=1 <<'ENDSQL'
+              kubectl exec -n cnpg-pods "$PRIMARY" -c postgres -i -- \
+                env PGPASSWORD="$PG_PASS" psql -U "$PG_USER" -d "$APP_DB_NAME" -v ON_ERROR_STOP=1 << 'ENDSQL'
 
               -- Schema ownership (matches backup)
               ALTER SCHEMA public OWNER TO portfolio;
@@ -285,21 +257,26 @@ spec:
 
               ENDSQL
 
-              echo "All done. Verifying row counts..."
-              psql -h "$PGHOST" -d "${APP_DB_NAME}" -c "
-                SELECT 'projects' AS tbl, COUNT(*) FROM public.projects
-                UNION ALL SELECT 'skills',      COUNT(*) FROM public.skills
-                UNION ALL SELECT 'testimonials', COUNT(*) FROM public.testimonials
-                UNION ALL SELECT 'works',        COUNT(*) FROM public.works;
-              "
+              # ---- 4. Verify row counts -----------------------------------------------
+              echo "Verifying row counts..."
+              kubectl exec -n cnpg-pods "$PRIMARY" -c postgres -- \
+                env PGPASSWORD="$PG_PASS" psql -U "$PG_USER" -d "$APP_DB_NAME" \
+                -c "SELECT 'projects' AS tbl, COUNT(*) FROM public.projects UNION ALL SELECT 'skills', COUNT(*) FROM public.skills UNION ALL SELECT 'testimonials', COUNT(*) FROM public.testimonials UNION ALL SELECT 'works', COUNT(*) FROM public.works;"
+
               echo "DB init complete."
-
-          volumeMounts:
-            - name: secrets
-              mountPath: /secrets
-              readOnly: true
-
-      volumes:
-        - name: secrets
-          emptyDir:
-            medium: Memory
+          env:
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-db-credentials
+                  key: username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-db-credentials
+                  key: password
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-db-credentials
+                  key: database
