@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: multi-namespace-exec-cnpg-primary
+  namespace: cnpg-pods
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: exec-cnpg-psql
+subjects:
+  - kind: ServiceAccount
+    name: airflow-db-init
+    namespace: airflow
+  - kind: ServiceAccount
+    name: portfolio-db-init
+    namespace: portfolio

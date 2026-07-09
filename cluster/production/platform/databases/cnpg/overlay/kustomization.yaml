@@ -7,3 +7,5 @@ resources:
   - multi-namespace-superuser-secret-rolebinding.yaml
   - read-cluster-clusterrole.yaml
   - multi-namespace-cluster-read-clusterrolebinding.yaml
+  - exec-cnpg-psql-role.yaml
+  - multi-namespace-exec-cnpg-primary-rolebinding.yaml
