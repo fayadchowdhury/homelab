@@ -6,7 +6,19 @@
 - name: Generate default containerd config
   shell: |
     mkdir -p /etc/containerd
-    containerd config default > /etc/containerd/config.toml
+    containerd config default | awk '
+      /\[.*transfer\.v1\.local.*\]/ { in_transfer = 1 }
+      /^\s*\[/ && !/transfer/ { in_transfer = 0 }
+      /max_concurrent_downloads/ {
+        if (in_transfer) { sub(/= [0-9]+/, "= 8"); print }
+        next
+      }
+      /max_concurrent_unpacks/ {
+        if (in_transfer) sub(/= [0-9]+/, "= 3")
+        print; next
+      }
+      { print }
+    ' > /etc/containerd/config.toml
   args:
     creates: /etc/containerd/config.toml
 

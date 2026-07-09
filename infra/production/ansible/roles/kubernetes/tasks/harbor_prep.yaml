@@ -44,8 +44,11 @@
         capabilities = ["pull", "resolve"]
         override_path = true
         skip_verify = true
-    mode: '0644'
+        [host."{{ harbor_scheme }}://{{ harbor_hostname }}/v2/{{ item.value.harbor_project }}".header]
+          authorization = ["Basic {{ (harbor_admin_username + ':' + harbor_admin_password) | b64encode }}"]
+    mode: '0600'
   loop: "{{ registry_mirrors | dict2items }}"
+  no_log: true
   register: hosts_toml
 
 - name: Create containerd config.d directory
@@ -60,22 +63,13 @@
     state: absent
   register: old_dropin
 
-- name: Write config.d drop-in — activate certs.d and DockerHub auth
+- name: Write config.d drop-in — activate certs.d
   ansible.builtin.copy:
     dest: /etc/containerd/config.d/harbor-mirrors.toml
     content: |
       [plugins."io.containerd.cri.v1.images".registry]
         config_path = "/etc/containerd/certs.d"
-
-      [plugins."io.containerd.cri.v1.images".registry.configs."registry-1.docker.io".auth]
-        username = "{{ dockerhub_username }}"
-        password = "{{ dockerhub_token }}"
-      
-      [plugins."io.containerd.cri.v1.images".registry.configs."cacher.home.com".auth]
-        username = "{{ harbor_admin_username }}"
-        password = "{{ harbor_admin_password }}"
-    mode: '0600'
-  no_log: true
+    mode: '0644'
   register: mirrors_dropin
 
 - name: Enable config.d imports in containerd config.toml
@@ -117,13 +111,17 @@
       and that the imports line is at the top of config.toml.
     success_msg: "config_path = /etc/containerd/certs.d is active."
 
-- name: Assert DockerHub auth is present in effective config
+- name: Assert hosts.toml mirror config exists for DockerHub
+  ansible.builtin.stat:
+    path: /etc/containerd/certs.d/docker.io/hosts.toml
+  register: dockerhub_hosts_toml
+
+- name: Assert DockerHub hosts.toml is present
   ansible.builtin.assert:
     that:
-      - '"registry-1.docker.io" in containerd_dump.stdout'
-    fail_msg: "DockerHub auth block missing from effective containerd config."
-    success_msg: "DockerHub auth is active."
-  no_log: true
+      - dockerhub_hosts_toml.stat.exists
+    fail_msg: "hosts.toml for docker.io is missing from certs.d."
+    success_msg: "DockerHub hosts.toml is present."
 
 - name: Verify containerd is running and enabled
   ansible.builtin.systemd:
