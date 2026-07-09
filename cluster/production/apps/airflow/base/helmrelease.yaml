@@ -36,7 +36,7 @@ spec:
       metadataSecretName: airflow-metadata-db-connection
 
     images:
-      migrationsWaitTimeout: 900
+      migrationsWaitTimeout: 1800
     
     # DAGs Configuration
     dags:
@@ -82,13 +82,45 @@ spec:
 
       useHelmHooks: false
       applyCustomEnv: false
+      extraInitContainers:
+        - name: wait-for-db
+          image: apache/airflow:3.1.8
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until airflow db check 2>/dev/null; do
+                echo "Waiting for airflow DB to be ready..."
+                sleep 10
+              done
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-metadata-db-connection
+                  key: connection
 
     migrateDatabaseJob:
-      # Whether the migrate database job should be created
       enabled: true
-
       useHelmHooks: false
       applyCustomEnv: false
+      extraInitContainers:
+        - name: wait-for-db
+          image: apache/airflow:3.1.8
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until airflow db check 2>/dev/null; do
+                echo "Waiting for airflow DB to be ready..."
+                sleep 10
+              done
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-metadata-db-connection
+                  key: connection
     
     # Prometheus Metrics
     statsd:
@@ -101,6 +133,23 @@ spec:
         release: kube-prometheus-stack
     
     apiServer:
+      extraInitContainers:
+        - name: wait-for-db
+          image: apache/airflow:3.1.8
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until airflow db check 2>/dev/null; do
+                echo "Waiting for airflow DB to be ready..."
+                sleep 10
+              done
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-metadata-db-connection
+                  key: connection
       startupProbe:
         initialDelaySeconds: 0
         periodSeconds: 10
@@ -118,6 +167,23 @@ spec:
         failureThreshold: 5
 
     scheduler:
+      extraInitContainers:
+        - name: wait-for-db
+          image: apache/airflow:3.1.8
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until airflow db check 2>/dev/null; do
+                echo "Waiting for airflow DB to be ready..."
+                sleep 10
+              done
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-metadata-db-connection
+                  key: connection
       startupProbe:
         initialDelaySeconds: 0
         periodSeconds: 10
@@ -130,13 +196,47 @@ spec:
         failureThreshold: 5
 
     dagProcessor:
+      extraInitContainers:
+        - name: wait-for-db
+          image: apache/airflow:3.1.8
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until airflow db check 2>/dev/null; do
+                echo "Waiting for airflow DB to be ready..."
+                sleep 10
+              done
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-metadata-db-connection
+                  key: connection
       livenessProbe:
         initialDelaySeconds: 10
         periodSeconds: 60
         timeoutSeconds: 20
         failureThreshold: 5
-    
+
     triggerer:
+      extraInitContainers:
+        - name: wait-for-db
+          image: apache/airflow:3.1.8
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until airflow db check 2>/dev/null; do
+                echo "Waiting for airflow DB to be ready..."
+                sleep 10
+              done
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-metadata-db-connection
+                  key: connection
       livenessProbe:
         initialDelaySeconds: 10
         periodSeconds: 60
@@ -145,7 +245,7 @@ spec:
       persistence:
         enabled: true
         size: 5Gi
-        storageClassName: longhorn-slow-single-replica
+        storageClassName: longhorn-fast-single-replica
 
     # Global Node Affinity
     affinity:
