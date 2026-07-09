@@ -22,6 +22,11 @@ spec:
   upgrade:
     remediation:
       retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: jupyterhub-hub-secret
+      valuesKey: proxy.secretToken
+      targetPath: proxy.secretToken
   values:
     prePuller:
       hook:
@@ -33,7 +38,7 @@ spec:
       db:
         type: sqlite-pvc
         pvc:
-          storageClassName: longhorn-slow-single-replica
+          storageClassName: longhorn-fast-single-replica
           storage: 1Gi
       
       config:

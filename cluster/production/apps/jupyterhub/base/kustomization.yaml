@@ -5,6 +5,7 @@ resources:
 - httproute.yaml
 - httpsroute.yaml
 - rustfs-credentials-secret.yaml
+- hub-secret.yaml
 - jupyterhub-spark-serviceaccount.yaml
 - helmrepository.yaml
 - helmrelease.yaml
