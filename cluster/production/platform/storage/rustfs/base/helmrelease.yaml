@@ -63,5 +63,5 @@ spec:
 
     storageclass:
       name: longhorn-slow-single-replica
-      dataStorageSize: 1000Gi
+      dataStorageSize: 1500Gi
       logStorageSize: 1Gi
