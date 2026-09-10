@@ -15,6 +15,7 @@ terraform.tfvars
 # Ansible inventory
 inventory.ini
 infra/production/ansible/group_vars/all/secret.yaml
+infra/production/ansible/group_vars/all/vars.yaml
 
 # Staging env file
 infra/staging/.env
