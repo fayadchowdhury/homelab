@@ -12,7 +12,8 @@ terraform.tfvars
 # For example, if you have a file named 'secrets.tfvars'
 # secrets.tfvars
 
-# Ansible inventory
+# Ansible inventory and config
+ansible.cfg
 inventory.ini
 infra/production/ansible/group_vars/all/secret.yaml
 infra/production/ansible/group_vars/all/vars.yaml
