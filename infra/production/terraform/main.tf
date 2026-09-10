@@ -79,14 +79,21 @@ resource "proxmox_vm_qemu" "vms" {
   }
 
   scsihw            = "virtio-scsi-pci" # Needs to be set to something like virtio-scsi-pci or virtio-scsi-single
-  network { # Network config
+  network { # Network config for first NIC
     id              = 0 # Required argument
     bridge          = "vmbr0" # Default bridged network
     model           = "virtio" # Type of network
   }
 
+  network { # Network config for second NIC
+    id              = 1 # Required argument
+    bridge          = "vmbr1" # Default bridged network
+    model           = "virtio" # Type of network
+  }
+
   os_type           = "cloud-init" # Required for cloud-init template based VMs
-  ipconfig0         = "ip=${each.value.ipv4},gw=${each.value.gw}" # IPv4 config
+  ipconfig0         = "ip=${each.value.ip0v4},gw=${each.value.gw0}" # IPv4 config for first NIC
+  ipconfig1         = lookup(each.value, "gw1", null) != null ? "ip=${each.value.ip1v4},gw=${each.value.gw1}" : "ip=${each.value.ip1v4}" # IPv4 config for first NIC
 
   ciuser            = var.CI_USER # cloud-init user; not setting this sometimes leaves empty cloud-user and password (even though it is already defined in the cloud-init template)
   cipassword        = var.CI_PASSWORD # cloud-init user password

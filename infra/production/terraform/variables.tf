@@ -53,8 +53,10 @@ variable "VM_DEFINITIONS" {
             storage = string
             size    = string
         }))
-        ipv4 = string
-        gw = string
+        ip0v4 = string
+        gw0 = string
+        ip1v4 = string
+        gw1 = optional(string)
         cloudinit_disk_storage = string
         tags = string
     }))

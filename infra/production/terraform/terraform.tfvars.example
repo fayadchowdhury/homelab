@@ -18,8 +18,10 @@ VM_DEFINITIONS = [
         intermediate_storage_location = "storage-location-for-intermediate-disk"
         final_storage_location = "target-storage-for-vm-disk"
         final_storage_size = "vm-disk-size-in-G"
-        ipv4 = "vm-ip-address-with-cidr"
-        gw = "gateway-ip-address"
+        ip0v4 = "vm-nic0-ip-address-with-cidr"
+        gw0 = "nic0-gateway-ip-address"
+        ip1v4 = "vm-nic1-ip-address-with-cidr"
+        gw1 = "nic1-gateway-ip-address"
         cloudinit_disk_storage = "storage-location-for-cloudinit-drive"
         tags = "tags-separated-by-commas"
     },
