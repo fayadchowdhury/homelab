@@ -11,16 +11,16 @@ def generate_inventory_dict(vm_metadata: Dict) -> Dict:
         if "master" in k:
             if "kube-master" not in inventory:
                 inventory["kube-master"] = []
-            inventory["kube-master"].append(f"{k} ansible_host={v["ip"].split("/")[0]}")
+            inventory["kube-master"].append(f"{k} ansible_host={v["ip0"].split("/")[0]}")
         if "worker" in k:
             if "kube-worker" not in inventory:
                 inventory["kube-worker"] = []
-            inventory["kube-worker"].append(f"{k} ansible_host={v["ip"].split("/")[0]}")
+            inventory["kube-worker"].append(f"{k} ansible_host={v["ip0"].split("/")[0]}")
         tags = v.get("tags", "").split(",")
         for tag in tags:
             if tag not in inventory:
                 inventory[tag] = []
-            inventory[tag].append(f"{k} ansible_host={v["ip"].split("/")[0]}")
+            inventory[tag].append(f"{k} ansible_host={v["ip0"].split("/")[0]}")
     return inventory
 
 def write_inventory_file(inventory: Dict, path: str) -> None:
