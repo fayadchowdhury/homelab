@@ -1,3 +1,17 @@
+- name: Set kubelet node-ip to management network
+  become: yes
+  copy:
+    content: |
+      KUBELET_EXTRA_ARGS=--node-ip={{ ansible_host }}
+    dest: /etc/default/kubelet
+    mode: '0644'
+
+- name: Restart kubelet
+  become: yes
+  systemd:
+    name: kubelet
+    state: restarted
+
 - name: Join cluster as worker
   become: yes
   shell: "{{ hostvars[groups['kube-master'][0]].kube_join_command }}"
