@@ -3,7 +3,7 @@
     dest: /etc/apt/apt.conf.d/01proxy
     content: |
       Acquire::http::Proxy "http://{{ apt_cacher_ng_hostname }}:{{ apt_cacher_ng_port }}";
-      Acquire::https::DIRECT "true";
+      Acquire::https::Proxy "http://{{ apt_cacher_ng_hostname }}:{{ apt_cacher_ng_port }}";
     mode: '0644'
 
 - name: Update package repositories
