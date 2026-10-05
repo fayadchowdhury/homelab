@@ -1,0 +1,108 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: polaris-bootstrap
+  namespace: polaris
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: flag
+          emptyDir: {}
+      initContainers:
+        - name: check-schema-empty
+          image: postgres:16-alpine
+          env:
+            - name: APP_SCHEMA_NAME
+              value: polaris_schema
+            - name: APP_JDBC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: jdbcUrl
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: password
+          volumeMounts:
+            - name: flag
+              mountPath: /flag
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              HOSTPORT=$(printf '%s' "$APP_JDBC_URL" | sed -E 's#^jdbc:postgresql://([^/]+)/.*#\1#')
+              export PGHOST="${HOSTPORT%%:*}"
+              case "$HOSTPORT" in
+                *:*) export PGPORT="${HOSTPORT##*:}" ;;
+                *)   export PGPORT=5432 ;;
+              esac
+              export PGDATABASE=$(printf '%s' "$APP_JDBC_URL" | sed -E 's#^jdbc:postgresql://[^/]+/([^?]+).*#\1#')
+ 
+              echo "Waiting for database and schema ${APP_SCHEMA_NAME} to exist..."
+              until s=$(psql -At -c "SELECT count(*) FROM information_schema.schemata WHERE schema_name = '${APP_SCHEMA_NAME}'" 2>/dev/null) && [ "$s" = "1" ]; do
+                echo "  not ready yet, retrying in 5s..."
+                sleep 5
+              done
+ 
+              n=$(psql -At -v ON_ERROR_STOP=1 \
+                -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = '${APP_SCHEMA_NAME}'")
+              echo "Tables in ${APP_SCHEMA_NAME}: ${n}"
+ 
+              if [ "$n" = "0" ]; then
+                echo run > /flag/decision
+              else
+                echo skip > /flag/decision
+              fi
+      containers:
+        - name: bootstrap
+          image: apache/polaris-admin-tool:1.8.0
+          volumeMounts:
+            - name: flag
+              mountPath: /flag
+          env:
+            - name: POLARIS_PERSISTENCE_TYPE
+              value: relational-jdbc
+            - name: QUARKUS_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: username
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: password
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: jdbcUrl
+            - name: REALM
+              value: POLARIS
+            - name: ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-root-credentials
+                  key: rootPassword
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              decision=$(cat /flag/decision)
+              if [ "$decision" != "run" ]; then
+                echo "Schema already populated; skipping bootstrap."
+                exit 0
+              fi
+              echo "Schema is empty; bootstrapping realm ${REALM}"
+              exec java -jar /deployments/polaris-admin-tool.jar bootstrap -r "$REALM" -c "${REALM},root,${ROOT_PASSWORD}"
