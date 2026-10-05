@@ -9,6 +9,9 @@ subjects:
   - kind: ServiceAccount
     name: portfolio-db-init
     namespace: portfolio
+  - kind: ServiceAccount
+    name: polaris-db-init
+    namespace: polaris
 roleRef:
   kind: ClusterRole
   name: cnpg-cluster-reader
