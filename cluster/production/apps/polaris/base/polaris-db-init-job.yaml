@@ -1,0 +1,104 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: polaris-db-init
+  namespace: polaris
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      serviceAccountName: polaris-db-init
+      restartPolicy: OnFailure
+      containers:
+        - name: db-init
+          image: bitnami/kubectl:latest
+          env:
+            - name: CNPG_NAMESPACE
+              value: cnpg-pods
+            - name: CNPG_CLUSTER
+              value: postgres-cluster
+            - name: APP_SCHEMA_NAME
+              value: polaris_schema
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: password
+            - name: APP_JDBC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-db-credentials
+                  key: jdbcUrl
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+ 
+              # Derive the database name from the JDBC URL so the Job and Polaris can't disagree
+              APP_DB_NAME=$(printf '%s' "$APP_JDBC_URL" | sed -E 's#^jdbc:postgresql://[^/]+/([^?]+).*#\1#')
+              if [ -z "$APP_DB_NAME" ] || [ "$APP_DB_NAME" = "$APP_JDBC_URL" ]; then
+                echo "Could not derive database name from jdbcUrl" >&2
+                exit 1
+              fi
+              echo "Target: database=$APP_DB_NAME schema=$APP_SCHEMA_NAME role=$APP_DB_USER"
+ 
+              echo "Waiting for CNPG cluster '$CNPG_CLUSTER' to be healthy..."
+              until kubectl get clusters.postgresql.cnpg.io "$CNPG_CLUSTER" -n "$CNPG_NAMESPACE" \
+                -o jsonpath='{.status.phase}' 2>/dev/null | grep -q "Cluster in healthy state"; do
+                echo "  not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "CNPG cluster is healthy."
+ 
+              PG_USER=$(kubectl get secret "${CNPG_CLUSTER}-superuser" -n "$CNPG_NAMESPACE" \
+                -o jsonpath='{.data.username}' | base64 -d)
+              PG_PASS=$(kubectl get secret "${CNPG_CLUSTER}-superuser" -n "$CNPG_NAMESPACE" \
+                -o jsonpath='{.data.password}' | base64 -d)
+              if [ -z "$PG_USER" ] || [ -z "$PG_PASS" ]; then
+                echo "Could not read superuser credentials from ${CNPG_CLUSTER}-superuser" >&2
+                exit 1
+              fi
+ 
+              PRIMARY=$(kubectl get pods -n "$CNPG_NAMESPACE" \
+                -l "cnpg.io/cluster=${CNPG_CLUSTER},cnpg.io/instanceRole=primary" \
+                -o jsonpath='{.items[0].metadata.name}')
+              if [ -z "$PRIMARY" ]; then
+                echo "No primary pod found for cluster $CNPG_CLUSTER" >&2
+                exit 1
+              fi
+              echo "Primary pod: $PRIMARY"
+ 
+              until kubectl exec -n "$CNPG_NAMESPACE" "$PRIMARY" -c postgres -- \
+                pg_isready -U "$PG_USER" >/dev/null 2>&1; do
+                echo "  postgres not accepting connections, retrying in 5s..."
+                sleep 5
+              done
+ 
+              echo "Provisioning role, database and schema (idempotent)..."
+              kubectl exec -n "$CNPG_NAMESPACE" "$PRIMARY" -c postgres -i -- \
+                env PGPASSWORD="$PG_PASS" psql -U "$PG_USER" -d postgres -v ON_ERROR_STOP=1 \
+                  -v app_user="$APP_DB_USER" -v app_pass="$APP_DB_PASSWORD" \
+                  -v app_db="$APP_DB_NAME" -v app_schema="$APP_SCHEMA_NAME" <<'EOF'
+              SELECT format('CREATE ROLE %I LOGIN', :'app_user')
+              WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'app_user') \gexec
+ 
+              ALTER ROLE :"app_user" WITH LOGIN PASSWORD :'app_pass';
+ 
+              SELECT format('CREATE DATABASE %I OWNER %I ENCODING ''UTF8'' TEMPLATE template0', :'app_db', :'app_user')
+              WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'app_db') \gexec
+ 
+              ALTER DATABASE :"app_db" OWNER TO :"app_user";
+ 
+              \connect :"app_db"
+ 
+              CREATE SCHEMA IF NOT EXISTS :"app_schema" AUTHORIZATION :"app_user";
+              ALTER SCHEMA :"app_schema" OWNER TO :"app_user";
+              EOF
+ 
+              echo "Provisioning complete."
