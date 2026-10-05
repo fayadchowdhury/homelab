@@ -5,3 +5,4 @@ resources:
 - jupyterhub
 - airflow
 - spark-operator
+- polaris
