@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-rustfs-bucket
+  namespace: polaris
+  annotations:
+    description: "Ensures the lakehouse bucket exists, creating it if necessary"
+    kustomize.toolkit.fluxcd.io/force: Enabled
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: bucket-maintenance
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: ensure-bucket
+          image: amazon/aws-cli:2.15.17
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: rustfs-credentials
+                  key: RUSTFS_ACCESS_KEY
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: rustfs-credentials
+                  key: RUSTFS_SECRET_KEY
+            - name: ENDPOINT_URL
+              value: "http://rustfs-svc.rustfs.svc.cluster.local:9000"
+            - name: BUCKET_NAME
+              value: "lakehouse"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              echo "Waiting for RustFS at ${ENDPOINT_URL}..."
+              until aws s3 ls --endpoint-url "${ENDPOINT_URL}" >/dev/null 2>&1; do
+                echo "  not reachable (or credentials rejected), retrying in 5s..."
+                sleep 5
+              done
+
+              echo "Checking if bucket s3://${BUCKET_NAME}/ exists..."
+              if aws s3 ls "s3://${BUCKET_NAME}/" --endpoint-url "${ENDPOINT_URL}" >/dev/null 2>&1; then
+                echo "Bucket exists. Nothing to do."
+              else
+                echo "Bucket does not exist. Creating..."
+                aws s3 mb "s3://${BUCKET_NAME}/" --endpoint-url "${ENDPOINT_URL}"
+                echo "Bucket created."
+              fi
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

@@ -6,6 +6,7 @@ resources:
 - helmrelease.yaml
 - rustfs-credentials-secret.yaml
 - db-secret.yaml
+- create-rustfs-bucket.yaml
 - polaris-db-init-job-serviceaccount.yaml
 - polaris-db-init-job.yaml
 - polaris-root-credentials-secret.yaml
