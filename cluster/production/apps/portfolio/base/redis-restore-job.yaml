@@ -3,8 +3,11 @@ kind: Job
 metadata:
   name: portfolio-redis-restore
   namespace: portfolio
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: Enabled
 spec:
   backoffLimit: 3
+  activeDeadlineSeconds: 1800
   template:
     spec:
       restartPolicy: OnFailure
@@ -22,78 +25,72 @@ spec:
             - |
               set -e
 
+              R="redis-cli -h $REDIS_HOST -p $REDIS_PORT"
+
               echo "Waiting for Redis at ${REDIS_HOST}:${REDIS_PORT}..."
-              until redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" ping 2>&1 | grep -q PONG; do
+              until $R ping 2>&1 | grep -q PONG; do
                 echo "  Not ready, retrying in 3s..."
                 sleep 3
               done
               echo "Redis is ready."
 
-              echo "Flushing existing keys..."
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" DEL \
-                name intro taglines navbarLinks navbarLeader socials contactForm
-
               # ---------------------------------------------------------------
-              # STRING keys (6 total)
-              # Plain strings and JSON strings are both SET — Redis doesn't
-              # distinguish between "a string" and "a JSON string", that's
-              # the application's responsibility.
+              # Seed-if-missing: every write below is conditional (NX), so a
+              # rerun fills in absent keys and NEVER overwrites existing data.
+              # There is deliberately no DEL. To force a new value from Git,
+              # delete that key by hand first, then let the Job rerun.
+              # Each command prints OK (written) or (nil)/0 (already existed).
               # ---------------------------------------------------------------
-              echo "Writing STRING keys..."
 
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" SET name \
-                "Ahmad Al Fayad Chowdhury"
+              echo "Writing STRING keys (SET ... NX)..."
 
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" SET intro \
-                "Hi, I'm Fayad, a data-focused software engineer exploring the intersections of machine learning, systems, and homelabbing."
+              $R SET name "Ahmad Al Fayad Chowdhury" NX
 
-              # JSON keys — stored as RedisJSON (ReJSON-RL type), read with JSON.GET
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" JSON.SET navbarLeader $ \
-                '{"text":"fayadchowdhury","specialChar":"_"}'
+              $R SET intro \
+                "Hi, I'm Fayad, a data-focused software engineer exploring the intersections of machine learning, systems, and homelabbing." NX
 
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" JSON.SET taglines $ \
-                '[{"text":"Distilling data into decisions","icon":"/hero-tagline-icons/data.svg"},{"text":"Connecting compute in clusters","icon":"/hero-tagline-icons/compute.svg"},{"text":"Igniting ideas into impact","icon":"/hero-tagline-icons/ideas.svg"},{"text":"Architecting AI into amazement","icon":"/hero-tagline-icons/ai.svg"}]'
+              echo "Writing JSON keys (JSON.SET ... NX)..."
 
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" JSON.SET navbarLinks $ \
-                '[{"label":"Experience","url":"#work"},{"label":"Projects","url":"#projects"},{"label":"Skills","url":"#skills"}]'
+              $R JSON.SET navbarLeader '$' \
+                '{"text":"fayadchowdhury","specialChar":"_"}' NX
 
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" JSON.SET socials $ \
-                '[{"icon":"/hero-social-icons/github.svg","link":"https://github.com/fayadchowdhury"},{"icon":"/hero-social-icons/linkedin.svg","link":"https://www.linkedin.com/in/ahmad-al-fayad-chowdhury/"}]'
+              $R JSON.SET taglines '$' \
+                '[{"text":"Distilling data into decisions","icon":"/hero-tagline-icons/data.svg"},{"text":"Connecting compute in clusters","icon":"/hero-tagline-icons/compute.svg"},{"text":"Igniting ideas into impact","icon":"/hero-tagline-icons/ideas.svg"},{"text":"Architecting AI into amazement","icon":"/hero-tagline-icons/ai.svg"}]' NX
 
-              # ---------------------------------------------------------------
-              # HASH key (1 total)
-              # contactForm is a Redis hash with two fields.
-              # ---------------------------------------------------------------
-              echo "Writing HASH keys..."
+              $R JSON.SET navbarLinks '$' \
+                '[{"label":"Experience","url":"#work"},{"label":"Projects","url":"#projects"},{"label":"Skills","url":"#skills"}]' NX
 
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" HSET contactForm \
-                title "Get in touch" \
-                description "I'd love to hear from you!"
+              $R JSON.SET socials '$' \
+                '[{"icon":"/hero-social-icons/github.svg","link":"https://github.com/fayadchowdhury"},{"icon":"/hero-social-icons/linkedin.svg","link":"https://www.linkedin.com/in/ahmad-al-fayad-chowdhury/"}]' NX
+
+              echo "Writing HASH key (HSETNX per field)..."
+
+              $R HSETNX contactForm title "Get in touch"
+              $R HSETNX contactForm description "I'd love to hear from you!"
 
               # ---------------------------------------------------------------
               # Verify
               # ---------------------------------------------------------------
               echo ""
               echo "=== Verification ==="
-              echo "Key count: $(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" DBSIZE)"
+              echo "Key count: $($R DBSIZE)"
               echo ""
 
               for key in name intro; do
-                TYPE=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" TYPE "$key")
-                VAL=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" GET "$key" | head -c 60)
+                TYPE=$($R TYPE "$key")
+                VAL=$($R GET "$key" | head -c 60)
                 echo "  [$TYPE] $key = $VAL..."
               done
 
               for key in navbarLeader taglines navbarLinks socials; do
-                TYPE=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" TYPE "$key")
-                VAL=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" JSON.GET "$key" | head -c 60)
+                TYPE=$($R TYPE "$key")
+                VAL=$($R JSON.GET "$key" | head -c 60)
                 echo "  [$TYPE] $key = $VAL..."
               done
 
-              TYPE=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" TYPE contactForm)
+              TYPE=$($R TYPE contactForm)
               echo "  [$TYPE] contactForm fields:"
-              redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" HGETALL contactForm | \
-                awk 'NR%2{printf "    %s -> ",$0;next}1'
+              $R HGETALL contactForm | awk 'NR%2{printf "    %s -> ",$0;next}1'
 
               echo ""
-              echo "Redis restore complete."
+              echo "Redis seed complete."
