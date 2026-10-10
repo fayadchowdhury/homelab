@@ -5,6 +5,7 @@ metadata:
   namespace: airflow
 spec:
   backoffLimit: 6
+  activeDeadlineSeconds: 1800
   template:
     spec:
       serviceAccountName: airflow-db-init
@@ -12,49 +13,11 @@ spec:
       containers:
         - name: db-init
           image: bitnami/kubectl:latest
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-
-              echo "Waiting for CNPG cluster to be ready..."
-              until kubectl get cluster postgres-cluster -n cnpg-pods \
-                -o jsonpath='{.status.phase}' 2>/dev/null | grep -q "Cluster in healthy state"; do
-                echo "  CNPG not ready, retrying in 5s..."
-                sleep 5
-              done
-              echo "CNPG cluster is healthy."
-
-              PG_USER=$(kubectl get secret postgres-cluster-superuser -n cnpg-pods \
-                -o jsonpath='{.data.username}' | base64 -d)
-              PG_PASS=$(kubectl get secret postgres-cluster-superuser -n cnpg-pods \
-                -o jsonpath='{.data.password}' | base64 -d)
-
-              PRIMARY=$(kubectl get pods -n cnpg-pods -l cnpg.io/instanceRole=primary \
-                -o jsonpath='{.items[0].metadata.name}')
-              echo "Primary pod: $PRIMARY"
-
-              echo "Waiting for PostgreSQL to accept connections..."
-              until kubectl exec -n cnpg-pods "$PRIMARY" -c postgres -- \
-                pg_isready -U "$PG_USER" 2>/dev/null; do
-                echo "  Not ready, retrying in 5s..."
-                sleep 5
-              done
-              echo "PostgreSQL is ready."
-
-              echo "Creating role and database..."
-              kubectl exec -n cnpg-pods "$PRIMARY" -c postgres -i -- \
-                env PGPASSWORD="$PG_PASS" psql -U "$PG_USER" -v ON_ERROR_STOP=0 << EOF
-              CREATE ROLE ${APP_DB_USER} LOGIN PASSWORD '${APP_DB_PASSWORD}'
-                NOSUPERUSER NOCREATEDB NOCREATEROLE;
-              CREATE DATABASE ${APP_DB_NAME} OWNER ${APP_DB_USER}
-                ENCODING 'UTF8' TEMPLATE template0;
-              GRANT ALL PRIVILEGES ON DATABASE ${APP_DB_NAME} TO ${APP_DB_USER};
-              EOF
-
-              echo "Database provisioning complete."
           env:
+            - name: CNPG_NAMESPACE
+              value: cnpg-pods
+            - name: CNPG_CLUSTER
+              value: postgres-cluster
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -70,3 +33,46 @@ spec:
                 secretKeyRef:
                   name: airflow-db-credentials
                   key: database
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+
+              echo "Waiting for CNPG cluster '$CNPG_CLUSTER' to be healthy..."
+              until kubectl get clusters.postgresql.cnpg.io "$CNPG_CLUSTER" -n "$CNPG_NAMESPACE" \
+                -o jsonpath='{.status.phase}' 2>/dev/null | grep -q "Cluster in healthy state"; do
+                echo "  not ready, retrying in 5s..."; sleep 5
+              done
+
+              PG_USER=$(kubectl get secret "${CNPG_CLUSTER}-superuser" -n "$CNPG_NAMESPACE" -o jsonpath='{.data.username}' | base64 -d)
+              PG_PASS=$(kubectl get secret "${CNPG_CLUSTER}-superuser" -n "$CNPG_NAMESPACE" -o jsonpath='{.data.password}' | base64 -d)
+              [ -n "$PG_USER" ] && [ -n "$PG_PASS" ] || { echo "Could not read superuser credentials" >&2; exit 1; }
+
+              PRIMARY=$(kubectl get pods -n "$CNPG_NAMESPACE" \
+                -l "cnpg.io/cluster=${CNPG_CLUSTER},cnpg.io/instanceRole=primary" \
+                -o jsonpath='{.items[0].metadata.name}')
+              [ -n "$PRIMARY" ] || { echo "No primary pod found" >&2; exit 1; }
+              echo "Primary pod: $PRIMARY"
+
+              until kubectl exec -n "$CNPG_NAMESPACE" "$PRIMARY" -c postgres -- \
+                pg_isready -U "$PG_USER" >/dev/null 2>&1; do
+                echo "  postgres not accepting connections, retrying in 5s..."; sleep 5
+              done
+
+              echo "Provisioning role and database (idempotent)..."
+              kubectl exec -n "$CNPG_NAMESPACE" "$PRIMARY" -c postgres -i -- \
+                env PGPASSWORD="$PG_PASS" psql -U "$PG_USER" -d postgres -v ON_ERROR_STOP=1 \
+                  -v app_user="$APP_DB_USER" -v app_pass="$APP_DB_PASSWORD" -v app_db="$APP_DB_NAME" <<'EOF'
+              SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE', :'app_user')
+              WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'app_user') \gexec
+
+              ALTER ROLE :"app_user" WITH LOGIN PASSWORD :'app_pass';
+
+              SELECT format('CREATE DATABASE %I OWNER %I ENCODING ''UTF8'' TEMPLATE template0', :'app_db', :'app_user')
+              WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'app_db') \gexec
+
+              ALTER DATABASE :"app_db" OWNER TO :"app_user";
+              EOF
+
+              echo "Provisioning complete."
