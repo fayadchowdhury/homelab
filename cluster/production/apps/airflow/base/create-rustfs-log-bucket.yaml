@@ -4,7 +4,6 @@ metadata:
   name: create-rustfs-log-bucket
   namespace: airflow
   annotations:
-    description: "Ensures the airflow-logs bucket exists, creating it if necessary"
     kustomize.toolkit.fluxcd.io/force: Enabled
 spec:
   backoffLimit: 6

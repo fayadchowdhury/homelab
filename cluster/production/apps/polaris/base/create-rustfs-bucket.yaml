@@ -4,7 +4,6 @@ metadata:
   name: create-rustfs-bucket
   namespace: polaris
   annotations:
-    description: "Ensures the lakehouse bucket exists, creating it if necessary"
     kustomize.toolkit.fluxcd.io/force: Enabled
 spec:
   backoffLimit: 6

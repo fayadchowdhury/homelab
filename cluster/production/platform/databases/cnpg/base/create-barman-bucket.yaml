@@ -4,7 +4,6 @@ metadata:
   name: create-rustfs-barman-bucket
   namespace: cnpg-pods
   annotations:
-    description: "Ensures the cnpg-backups bucket exists, creating it if necessary"
     kustomize.toolkit.fluxcd.io/force: Enabled
 spec:
   backoffLimit: 6
