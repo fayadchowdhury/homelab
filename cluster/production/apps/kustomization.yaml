@@ -6,3 +6,4 @@ resources:
 - airflow
 - spark-operator
 - polaris
+- trino

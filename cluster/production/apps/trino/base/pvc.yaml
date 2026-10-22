@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trino-dynamic-catalogs
+  namespace: trino
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-fast-single-replica
+  resources:
+    requests:
+      storage: 100Mi
