@@ -50,7 +50,6 @@ spec:
       type: default
       realms:
         - POLARIS
-      requireHeader: true
 
     storage:
       secret:
