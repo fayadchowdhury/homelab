@@ -9,6 +9,7 @@
 - name: Update package repositories
   apt:
     update_cache: yes
+  throttle: 1
 
 - name: Upgrade packages to latest version
   apt:
