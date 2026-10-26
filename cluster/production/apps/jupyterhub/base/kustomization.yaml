@@ -7,5 +7,6 @@ resources:
 - rustfs-credentials-secret.yaml
 - hub-secret.yaml
 - jupyterhub-spark-serviceaccount.yaml
+- polaris-identities-secret-writer-rolebinding.yaml
 - helmrepository.yaml
 - helmrelease.yaml

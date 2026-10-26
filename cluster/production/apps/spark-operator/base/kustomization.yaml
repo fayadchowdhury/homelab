@@ -5,6 +5,7 @@ resources:
 - job-namespace.yaml
 - helmrepository.yaml
 - helmrelease.yaml
+- polaris-identities-secret-writer-rolebinding.yaml
 - spark-serviceaccount.yaml
 - spark-clusterrole.yaml
 - spark-clusterrolebinding.yaml
