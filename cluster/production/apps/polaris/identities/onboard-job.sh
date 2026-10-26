@@ -2,6 +2,13 @@
 # Ensures one Polaris principal + principal role per tool and delivers each tool's credential as a
 # Kubernetes Secret in the tool's own namespace. Idempotent; credentials are only issued when needed.
 #   IDENTITIES = space separated "principal:namespace:secretName" entries
+#
+# Polaris shows a client secret ONLY when it is created or reset. Two safeguards follow from that:
+#   1. Before touching Polaris, check that this ServiceAccount may write the Secret (otherwise the one-time
+#      secret would be lost).
+#   2. If a principal exists but its Secret is missing, issue a new secret: try the reset endpoint first and,
+#      if the root principal is not allowed to use it, delete and recreate the principal. (Rotation is not
+#      usable here: Polaris only lets a principal rotate its OWN credentials.)
 set -eu
 
 POLARIS="${POLARIS_URL:-http://polaris.polaris.svc.cluster.local:8181}"
@@ -44,14 +51,32 @@ for entry in $IDENTITIES; do
   ROLE="${P}_role"
   echo "== $P -> secret $NS/$SECRET"
 
+  # Safeguard 1: never create or change anything in Polaris if we cannot deliver the credential.
+  for verb in get create patch update; do
+    if ! kubectl auth can-i "$verb" secrets -n "$NS" >/dev/null 2>&1; then
+      echo "FAILED: cannot '$verb' secrets in namespace '$NS' (missing namespace or RoleBinding?). Nothing was changed in Polaris." >&2
+      exit 1
+    fi
+  done
+
   CID=""; CSEC=""
   code=$(api POST "$MGMT/principals" "{\"principal\":{\"name\":\"$P\"}}")
   if [ "$code" = "409" ]; then
     if kubectl -n "$NS" get secret "$SECRET" >/dev/null 2>&1; then
       echo "  principal and secret exist, credentials untouched"
     else
-      echo "  principal exists but secret is missing -> rotating credentials"
-      ok "$(api POST "$MGMT/principals/$P/rotate")" "rotate"
+      # Safeguard 2: principal exists but we no longer hold its secret.
+      echo "  principal exists but secret is missing -> resetting credentials"
+      code=$(api POST "$MGMT/principals/$P/reset")
+      if [ "$code" != "200" ]; then
+        echo "  reset not permitted ($code) -> recreating principal"
+        ok "$(api DELETE "$MGMT/principals/$P")" "delete principal"
+        code=$(api POST "$MGMT/principals" "{\"principal\":{\"name\":\"$P\"}}")
+        [ "$code" = "201" ] || { echo "FAILED: recreate principal -> $code"; cat "$OUT"; echo; exit 1; }
+        echo "  recreate principal -> 201"
+      else
+        echo "  reset -> 200"
+      fi
       CID=$(jq -r '.credentials.clientId' "$OUT"); CSEC=$(jq -r '.credentials.clientSecret' "$OUT")
     fi
   else
