@@ -60,9 +60,9 @@ spec:
           mountPath: /data/catalogs
     envFrom:
       - secretRef:
-          name: trino-rustfs-credentials
+          name: rustfs-credentials
       - secretRef:
-          name: trino-polaris-credentials
+          name: polaris-credentials
     securityContext:
       runAsUser: 1000
       runAsGroup: 1000

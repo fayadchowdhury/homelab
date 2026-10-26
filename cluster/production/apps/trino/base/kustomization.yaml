@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
 - namespace.yaml
 - pvc.yaml
-- trino-rustfs-credentials-secret.yaml
-- trino-polaris-credentials-secret.yaml
+- polaris-identities-secret-writer-rolebinding.yaml
+- rustfs-credentials-secret.yaml
 - helmrepository.yaml
 - helmrelease.yaml

@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: polaris-platform-identities
+  namespace: polaris
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: Enabled
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 6
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      serviceAccountName: polaris-identities-secret-writer
+      restartPolicy: OnFailure
+      containers:
+        - name: identities
+          image: alpine/k8s:1.31.4
+          command: ["/bin/sh", "/scripts/onboard-job.sh"]
+          env:
+            - name: IDENTITIES
+              value: "trino:trino:polaris-credentials spark:spark-jobs:polaris-credentials jupyter:jupyterhub:polaris-credentials"
+            - name: ROOT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-root-credentials
+                  key: rootPassword
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: script
+          configMap:
+            name: polaris-onboard-script
