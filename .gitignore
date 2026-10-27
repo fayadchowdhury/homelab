@@ -30,3 +30,6 @@ infra/production/helpers/harbor.conf
 
 # Harbor cache state
 harbor.cache-state
+
+# Cluster build logs
+rebuild-logs/
