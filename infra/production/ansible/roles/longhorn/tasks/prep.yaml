@@ -11,14 +11,26 @@
     fail_msg: "Expected block device /dev/sdb not found on {{ inventory_hostname }}"
     success_msg: "Found extra disk /dev/sdb on {{ inventory_hostname }}"
 
-- name: Install disk management packages
-  apt:
-    name:
-      - parted
-      - xfsprogs
-      - util-linux
-    state: present
-    update_cache: yes
+- name: Ensure unique iSCSI initiator name
+  shell: echo "InitiatorName=$(iscsi-iname)" > /etc/iscsi/initiatorname.iscsi
+  args:
+    creates: /etc/iscsi/initiatorname.iscsi
+
+- name: Enable and start iscsid
+  systemd:
+    name: iscsid
+    enabled: true
+    state: started
+
+# Trying out baked image
+# - name: Install disk management packages
+#   apt:
+#     name:
+#       - parted
+#       - xfsprogs
+#       - util-linux
+#     state: present
+#     update_cache: yes
 
 - name: Check if disk already has partitions
   command: lsblk -no FSTYPE /dev/sdb

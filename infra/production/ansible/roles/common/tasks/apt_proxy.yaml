@@ -1,0 +1,7 @@
+- name: Configure apt proxy
+  copy:
+    dest: /etc/apt/apt.conf.d/01proxy
+    content: |
+      Acquire::http::Proxy "http://{{ apt_cacher_ng_hostname }}:{{ apt_cacher_ng_port }}";
+      Acquire::https::Proxy "http://{{ apt_cacher_ng_hostname }}:{{ apt_cacher_ng_port }}";
+    mode: '0644'
