@@ -22,22 +22,6 @@
     enabled: true
     state: started
 
-# Trying out baked image
-# - name: Install disk management packages
-#   apt:
-#     name:
-#       - parted
-#       - xfsprogs
-#       - util-linux
-#     state: present
-#     update_cache: yes
-
-- name: Check if disk already has partitions
-  command: lsblk -no FSTYPE /dev/sdb
-  register: disk_fstype
-  changed_when: false
-  failed_when: false
-
 - name: Create GPT partition table
   community.general.parted:
     device: /dev/sdb
@@ -83,21 +67,6 @@
     mode: '0755'
     owner: root
     group: root
-
-- name: Check if already mounted
-  command: mountpoint -q /var/lib/longhorn
-  register: already_mounted
-  changed_when: false
-  failed_when: false
-
-- name: Add disk to fstab
-  ansible.posix.mount:
-    path: /var/lib/longhorn
-    src: "UUID={{ disk_uuid.stdout }}"
-    fstype: xfs
-    opts: defaults,noatime,nodiratime
-    state: present
-  register: fstab_updated
 
 - name: Mount the Longhorn disk
   ansible.posix.mount:
