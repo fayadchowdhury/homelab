@@ -11,6 +11,7 @@ provider "proxmox" {
   pm_api_url            = "https://${var.PM_HOST}.${var.PM_DOMAIN}:8006/api2/json"
   pm_api_token_id       = var.PM_API_TOKEN_ID
   pm_api_token_secret   = var.PM_API_TOKEN_SECRET
+  pm_parallel           = 5      # concurrent Proxmox operations
   pm_debug              = true
   pm_log_enable         = true
   pm_log_file           = "terraform-plugin-proxmox.log"
