@@ -60,5 +60,5 @@
   become: false
   tasks:
     - include_role:
-        name: common
+        name: kubernetes
         tasks_from: flux_bootstrap.yaml
