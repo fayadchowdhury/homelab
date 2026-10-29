@@ -30,7 +30,7 @@
     kubectl wait nodes \
       --all \
       --for=condition=Ready \
-      --timeout=300s
+      --timeout=600s
   register: nodes_ready
   changed_when: false
   environment:
@@ -80,7 +80,8 @@
       --branch=master \
       --path={{ flux_cluster_path }} \
       --components-extra=image-reflector-controller,image-automation-controller \
-      --personal
+      --personal \
+      --timeout=15m
   environment:
     GITHUB_TOKEN: "{{ github_token }}"
     KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
