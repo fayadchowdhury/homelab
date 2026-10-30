@@ -1,5 +1,6 @@
 - name: Apply role labels to nodes
-  command: kubectl label node {{ item.1 }} role/{{ item.0.key }}=true --overwrite
+  ansible.builtin.command: >
+    kubectl label node {{ item.1 }} role/{{ item.0.key }}=true --overwrite
   with_subelements:
     - "{{ role_mappings | dict2items }}"
     - value
@@ -7,16 +8,19 @@
     label: "{{ item.1 }} -> role/{{ item.0.key }}"
   vars:
     role_mappings:
-      control: "{{ groups['control'] }}"
-      compute: "{{ groups['compute'] }}"
-      monitor: "{{ groups['monitor'] }}"
-      store: "{{ groups['store'] }}"
-      db: "{{ groups['db'] }}"
+      control:   "{{ groups.get('control', []) }}"
+      notebooks: "{{ groups.get('notebooks', []) }}"
+      apps:      "{{ groups.get('apps', []) }}"
+      monitor:   "{{ groups.get('monitor', []) }}"
+      store:     "{{ groups.get('store', []) }}"
+      db:        "{{ groups.get('db', []) }}"
+  register: label_result
+  changed_when: "'not labeled' not in label_result.stdout"
   environment:
     KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
 - name: Taint control-plane nodes (NoSchedule)
-  command: >
+  ansible.builtin.command: >
     kubectl taint nodes {{ item }}
     node-role.kubernetes.io/control-plane=:NoSchedule
     --overwrite
@@ -28,43 +32,10 @@
   environment:
     KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
-
-# - name: Apply taints to specialized nodes
-#   command: >
-#     kubectl taint nodes {{ item.1 }}
-#     {{ item.0.taint_key }}={{ item.0.taint_value }}:{{ item.0.effect }}
-#     --overwrite
-#   loop: "{{ taint_configs | subelements('nodes') }}"
-#   loop_control:
-#     label: "{{ item.1 }} -> {{ item.0.taint_key }}:{{ item.0.effect }}"
-#   vars:
-#     taint_configs:
-#       - taint_key: "node-role.kubernetes.io/control-plane"
-#         taint_value: ""
-#         effect: "NoSchedule"
-#         nodes: "{{ groups['control'] }}"
-      
-#       - taint_key: "workload"
-#         taint_value: "database"
-#         effect: "NoSchedule"
-#         nodes: "{{ groups['db'] }}"
-      
-#       - taint_key: "workload"
-#         taint_value: "storage"
-#         effect: "NoSchedule"
-#         nodes: "{{ groups['store'] }}"
-      
-#       - taint_key: "workload"
-#         taint_value: "monitoring"
-#         effect: "PreferNoSchedule"
-#         nodes: "{{ groups['monitor'] }}"
-#   register: taint_result
-#   changed_when: "'tainted' in taint_result.stdout or 'updated' in taint_result.stdout"
-
 - name: Get node labels and taints
-  shell: |
+  ansible.builtin.shell: |
     echo "=== NODE LABELS ==="
-    kubectl get nodes -L role/control,role/compute,role/monitor,role/store,role/db
+    kubectl get nodes -L role/control,role/notebooks,role/apps,role/monitor,role/store,role/db
     echo ""
     echo "=== NODE TAINTS ==="
     kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
@@ -74,5 +45,5 @@
     KUBECONFIG: "{{ kubeconfig_out | default(lookup('env','HOME') + '/.kube/config-production') }}"
 
 - name: Display node configuration
-  debug:
+  ansible.builtin.debug:
     msg: "{{ node_config.stdout_lines }}"
