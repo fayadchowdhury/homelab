@@ -1,0 +1,19 @@
+- name: Allow parallel image pulls
+  ansible.builtin.lineinfile:
+    path: /var/lib/kubelet/config.yaml
+    regexp: '^serializeImagePulls:'
+    line: 'serializeImagePulls: false'
+  register: kubelet_serialize
+
+- name: Cap parallel image pulls
+  ansible.builtin.lineinfile:
+    path: /var/lib/kubelet/config.yaml
+    regexp: '^maxParallelImagePulls:'
+    line: "maxParallelImagePulls: {{ max_parallel_image_pulls | default(3) }}"
+  register: kubelet_maxpar
+
+- name: Restart kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    state: restarted
+  when: kubelet_serialize.changed or kubelet_maxpar.changed

@@ -47,6 +47,14 @@
         name: kubernetes
         tasks_from: join_worker.yaml
 
+- name: Tune kubelet image pulls
+  hosts: all
+  become: true
+  tasks:
+    - include_role:
+        name: common
+        tasks_from: tune_kubelet_pull.yaml
+
 - name: Label Kubernetes nodes
   hosts: localhost
   become: false
