@@ -7,6 +7,8 @@ spec:
   backoffLimit: 3
   template:
     spec:
+      nodeSelector:
+        role/apps: "true"
       restartPolicy: Never
       volumes:
         - name: flag

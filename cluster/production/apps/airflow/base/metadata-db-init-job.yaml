@@ -8,6 +8,8 @@ spec:
   activeDeadlineSeconds: 1800
   template:
     spec:
+      nodeSelector:
+        role/apps: "true"
       serviceAccountName: airflow-db-init
       restartPolicy: OnFailure
       containers:

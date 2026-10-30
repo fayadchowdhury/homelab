@@ -35,7 +35,7 @@ spec:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
             - matchExpressions:
-                - key: role/compute
+                - key: role/apps
                   operator: In
                   values:
                     - "true"

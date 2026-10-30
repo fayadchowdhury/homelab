@@ -245,7 +245,7 @@ spec:
       persistence:
         enabled: true
         size: 5Gi
-        storageClassName: longhorn-fast-single-replica
+        storageClassName: longhorn-slow-single-replica
 
     # Global Node Affinity
     affinity:
@@ -253,7 +253,7 @@ spec:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
             - matchExpressions:
-                - key: role/compute
+                - key: role/apps
                   operator: In
                   values:
                     - "true"

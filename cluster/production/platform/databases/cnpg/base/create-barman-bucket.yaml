@@ -13,6 +13,8 @@ spec:
       labels:
         app: bucket-maintenance
     spec:
+      nodeSelector:
+        role/db: "true"
       restartPolicy: OnFailure
       containers:
         - name: ensure-bucket

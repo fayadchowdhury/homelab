@@ -34,7 +34,7 @@ spec:
             false
     hub:
       nodeSelector:
-        role/compute: "true"
+        role/notebooks: "true"
       db:
         type: sqlite-pvc
         pvc:
@@ -65,7 +65,7 @@ spec:
     # Single-user notebook configuration
     singleuser:
       nodeSelector:
-        role/compute: "true"
+        role/notebooks: "true"
       
       extraPodConfig:
         affinity:
@@ -73,7 +73,7 @@ spec:
             requiredDuringSchedulingIgnoredDuringExecution:
               nodeSelectorTerms:
                 - matchExpressions:
-                    - key: role/compute
+                    - key: role/notebooks
                       operator: In
                       values:
                         - "true"
@@ -139,7 +139,7 @@ spec:
         type: ClusterIP
       chp:
         nodeSelector:
-          role/compute: "true"
+          role/notebooks: "true"
         resources:
           requests:
             cpu: 100m

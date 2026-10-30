@@ -7,6 +7,8 @@ spec:
   backoffLimit: 6
   template:
     spec:
+      nodeSelector:
+        role/apps: "true"
       serviceAccountName: portfolio-db-init
       restartPolicy: OnFailure
       containers:

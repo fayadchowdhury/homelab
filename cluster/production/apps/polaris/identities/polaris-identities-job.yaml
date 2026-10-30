@@ -11,6 +11,8 @@ spec:
   activeDeadlineSeconds: 3600
   template:
     spec:
+      nodeSelector:
+        role/apps: "true"
       serviceAccountName: polaris-identities-secret-writer
       restartPolicy: OnFailure
       containers:

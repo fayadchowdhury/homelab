@@ -32,6 +32,8 @@ spec:
       - catalog.store=file
       - http-server.process-forwarded=true
     coordinator:
+      nodeSelector:
+        role/apps: "true"
       additionalConfigFiles:
           catalog-store.properties: |
             catalog.config-dir=/data/catalogs

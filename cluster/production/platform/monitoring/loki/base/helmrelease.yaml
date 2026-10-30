@@ -109,6 +109,8 @@ spec:
       enabled: false
 
     gateway:
+      nodeSelector:
+        role/monitor: "true"
       enabled: true
       replicas: 1
       resources:

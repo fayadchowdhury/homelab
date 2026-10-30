@@ -27,11 +27,11 @@ spec:
   values:
     controller:
       nodeSelector:
-        role/compute: "true"
+        role/apps: "true"
 
     webhook:
       nodeSelector:
-        role/compute: "true"
+        role/apps: "true"
       enable: true
     
     resources:

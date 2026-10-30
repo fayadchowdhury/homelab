@@ -12,6 +12,8 @@ spec:
       ttlSecondsAfterFinished: 86400
       template:
         spec:
+          nodeSelector:
+            role/db: "true"
           restartPolicy: OnFailure
           containers:
           - name: backup

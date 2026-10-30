@@ -13,6 +13,8 @@ spec:
       labels:
         app: portfolio-backend
     spec:
+      nodeSelector:
+        role/apps: "true"
       containers:
         - name: portfolio-backend
           image: fayadchowdhury/portfolio-backend:latest
