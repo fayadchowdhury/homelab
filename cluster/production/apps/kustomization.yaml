@@ -7,3 +7,4 @@ resources:
 - spark-operator
 - polaris
 - trino
+- superset

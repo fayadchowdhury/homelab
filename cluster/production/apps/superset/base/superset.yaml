@@ -1,0 +1,131 @@
+apiVersion: superset.apache.org/v1alpha1
+kind: Superset
+metadata:
+  name: superset
+  namespace: superset
+spec:
+  podTemplate:
+    nodeSelector:
+      role/apps: "true"
+  image:
+    tag: "6.1.0-dev"
+  secretKeyFrom:
+    name: superset-secret-key
+    key: SECRET_KEY
+  metastore:
+    uriFrom:
+      name: superset-db-credentials
+      key: uri
+  valkey:
+    host: redis-lb.redis.svc.cluster.local
+  featureFlags:
+    ALERT_REPORTS: true
+  config: |
+    ENABLE_PROXY_FIX = True
+    CeleryConfig.imports = (
+        "superset.sql_lab",
+        "superset.tasks.scheduler",
+        "superset.tasks.thumbnails",
+        "superset.tasks.cache",
+    )
+  lifecycle:
+    podTemplate:
+      nodeSelector:
+        role/apps: "true"
+      container:
+        env:
+          - name: ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: superset-admin
+                key: password
+          - name: ADMIN_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: superset-admin
+                key: username
+          - name: ADMIN_FIRSTNAME
+            valueFrom:
+              secretKeyRef:
+                name: superset-admin
+                key: firstname
+          - name: ADMIN_LASTNAME
+            valueFrom:
+              secretKeyRef:
+                name: superset-admin
+                key: lastname
+          - name: TRINO_URI
+            valueFrom:
+              secretKeyRef:
+                name: superset-trino-uri
+                key: trinoUri
+    init:
+      command:
+        - /bin/sh
+        - -c
+        - |
+          superset init
+          superset fab create-admin \
+            --username "$ADMIN_USERNAME" --firstname "$ADMIN_FIRSTNAME" --lastname "$ADMIN_LASTNAME" \
+            --email admin@example.com --password "$ADMIN_PASSWORD" \
+            || echo "admin user already exists, skipping"
+          superset set-database-uri \
+            -d "Trino" \
+            -u "$TRINO_URI"
+  webServer:
+    replicas: 1
+    podTemplate:
+      container:
+        resources:
+          requests:
+            cpu: 250m
+            memory: 768Mi
+          limits:
+            memory: 1536Mi
+  
+  celeryWorker:
+    replicas: 1
+    celery:
+      preset: conservative
+      maxTasksPerChild: 500
+    podTemplate:
+      container:
+        resources:
+          requests:
+            cpu: 250m
+            memory: 768Mi
+          limits:
+            memory: 1536Mi
+
+  celeryBeat:
+    config: |
+      from celery.schedules import crontab
+
+      CeleryConfig.beat_schedule = {
+          "reports.scheduler": {
+              "task": "reports.scheduler",
+              "schedule": crontab(minute="*", hour="*"),
+              "options": {"expires": 7 * 24 * 60 * 60},
+          },
+          "reports.prune_log": {
+              "task": "reports.prune_log",
+              "schedule": crontab(minute=0, hour=0),
+          },
+      }
+    podTemplate:
+      container:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+            
+  networking:
+    gateway:
+      gatewayRef:
+        name: traefik-gateway
+        namespace: traefik
+        sectionName: websecure
+      hostnames:
+        - superset.home.com

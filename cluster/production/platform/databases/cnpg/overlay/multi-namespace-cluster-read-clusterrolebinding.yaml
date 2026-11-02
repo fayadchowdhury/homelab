@@ -12,6 +12,9 @@ subjects:
   - kind: ServiceAccount
     name: polaris-db-init
     namespace: polaris
+  - kind: ServiceAccount
+    name: superset-db-init
+    namespace: superset
 roleRef:
   kind: ClusterRole
   name: cnpg-cluster-reader

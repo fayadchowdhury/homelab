@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- superset-crd.yaml
+- operator-namespace.yaml
+- operator-helmrepository.yaml
+- operator-helmrelease.yaml
+- deployment-namespace.yaml
+- superset-secret-key-secret.yaml
+- superset-db-credentials-secret.yaml
+- superset-admin-user-secret.yaml
+- superset-trino-uri-secret.yaml
+- superset-db-init-job-serviceaccount.yaml
+- superset-db-init-job.yaml
+- superset.yaml
