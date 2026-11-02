@@ -13,7 +13,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: db-init
-          image: bitnami/kubectl:latest
+          image: bitnami/kubectl@sha256:bedd34c910e2a5ce9836813d16444af449d7fe07a29136d59f34e861e8e660c5
           env:
             - name: CNPG_NAMESPACE
               value: cnpg-pods
