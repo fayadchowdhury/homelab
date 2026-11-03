@@ -80,7 +80,7 @@ spec:
       storage:
         type: dynamic
         dynamic:
-          storageClass: longhorn-slow-single-replica
+          storageClass: longhorn-fast-single-replica
           pvcNameTemplate: jupyter-{username}
           volumeNameTemplate: jupyter-{username}
           storageAccessModes:
